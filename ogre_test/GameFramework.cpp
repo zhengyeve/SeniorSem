@@ -14,19 +14,19 @@ This source file is part of the
       http://www.ogre3d.org/tikiwiki/
 -----------------------------------------------------------------------------
 */
-#include "TutorialApplication.h"
+#include "GameFramework.h"
 #include <OgreMath.h>
  
-BasicTutorial4::BasicTutorial4(void)
+GameFramework::GameFramework(void)
 {
 }
  
 //-------------------------------------------------------------------------------------
-BasicTutorial4::~BasicTutorial4(void)
+GameFramework::~GameFramework(void)
 {
 }
 
-void BasicTutorial4::destroyScene(void)
+void GameFramework::destroyScene(void)
 {
 	OGRE_DELETE mTerrainGroup;
     OGRE_DELETE mTerrainGlobals;
@@ -41,7 +41,7 @@ void getTerrainImage(bool flipX, bool flipY, Ogre::Image& img)
         img.flipAroundX();
 }
 //-------------------------------------------------------------------------------------
-void BasicTutorial4::defineTerrain(long x, long y)
+void GameFramework::defineTerrain(long x, long y)
 {
 	Ogre::String filename = mTerrainGroup->generateFilename(x, y);
     if (Ogre::ResourceGroupManager::getSingleton().resourceExists(mTerrainGroup->getResourceGroup(), filename))
@@ -57,7 +57,7 @@ void BasicTutorial4::defineTerrain(long x, long y)
     }
 }
 //-------------------------------------------------------------------------------------
-void BasicTutorial4::initBlendMaps(Ogre::Terrain* terrain)
+void GameFramework::initBlendMaps(Ogre::Terrain* terrain)
 {
 	Ogre::TerrainLayerBlendMap* blendMap0 = terrain->getLayerBlendMap(1);
     Ogre::TerrainLayerBlendMap* blendMap1 = terrain->getLayerBlendMap(2);
@@ -90,7 +90,7 @@ void BasicTutorial4::initBlendMaps(Ogre::Terrain* terrain)
     blendMap1->update();
 }
 //-------------------------------------------------------------------------------------
-void BasicTutorial4::configureTerrainDefaults(Ogre::Light* light)
+void GameFramework::configureTerrainDefaults(Ogre::Light* light)
 {
 	// Configure global
     mTerrainGlobals->setMaxPixelError(8);
@@ -122,10 +122,12 @@ void BasicTutorial4::configureTerrainDefaults(Ogre::Light* light)
     defaultimp.layerList[2].textureNames.push_back("growth_weirdfungus-03_normalheight.dds");
 }
 //-------------------------------------------------------------------------------------
-void BasicTutorial4::createScene(void)
+void GameFramework::createScene(void)
 { 
     Ogre::MaterialManager::getSingleton().setDefaultTextureFiltering(Ogre::TFO_ANISOTROPIC);
     Ogre::MaterialManager::getSingleton().setDefaultAnisotropy(7);
+	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("../../myMedia","FileSystem");
+	Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
  
     Ogre::Vector3 lightdir(0.55, -0.3, 0.75);
     lightdir.normalise();
@@ -202,47 +204,16 @@ void BasicTutorial4::createScene(void)
 		worldObjects.pop_back();
 		collision_index = checkForCollision(&temp);
 	}
-
-	//ninja_node->setMaterial(Ogre::MaterialManager.getSingleton().getByName("Glass.material"));
-	//Ogre::MaterialManager::getSingleton().getResour
-	//Ogre::ResourceGroupManager::getSingleton().openResource("materials/scripts/Glass.material");
-	//Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
-
-	/*mm = ogre.MaterialManager.getSingleton()
-    rm = ogre.ResourceGroupManager.getSingleton()
-    tm = ogre.TextureManager.getSingleton()
-    meshm=ogre.MeshManager.getSingleton()
-
-    tm.setDefaultNumMipmaps (5)
-    mm.setDefaultTextureFiltering(ogre.TFO_ANISOTROPIC)
-    mm.setDefaultAnisotropy(2)
-    rm.initialiseAllResourceGroups()
-
-
-    mesh=meshm.load('data/Mesh/robot.mesh',ogre.ResourceGroupManager.DEFAULT_RESOURCE_GROUP_NAME)
-    mesh.setSkeletonName("data/Skeleton/robot.skeleton")
-    ds = rm.openResource("data/Material/robot.material", "General", True)
-    mm.parseScript(ds, "General")
-    material=mm.getByName("Robot")
-      
-    texture=tm.load("data/Map/r2skin.jpg", "General")
-
-    mpass=material.getTechnique(1).getPass(0)
-    mpass.getTextureUnitState(texture.getName())
-    entity = sceneManager.createEntity('robot', mesh.getName())
-    entity.setMaterialName(material.getName())
-    sceneManager.getRootSceneNode().attachObject(entity)
-    state=entity.getAnimationState('Walk')*/
 }
 //-------------------------------------------------------------------------------------
-void BasicTutorial4::createFrameListener(void)
+void GameFramework::createFrameListener(void)
 {
 	BaseApplication::createFrameListener();
  
     mInfoLabel = mTrayMgr->createLabel(OgreBites::TL_TOP, "TInfo", "", 350);
 }
 //-------------------------------------------------------------------------------------
-bool BasicTutorial4::frameRenderingQueued(const Ogre::FrameEvent& evt)
+bool GameFramework::frameRenderingQueued(const Ogre::FrameEvent& evt)
 {
     bool ret = BaseApplication::frameRenderingQueued(evt);
 
@@ -275,7 +246,7 @@ bool BasicTutorial4::frameRenderingQueued(const Ogre::FrameEvent& evt)
     return ret;
 }
 
-int BasicTutorial4::checkForCollision(Ogre::Vector3* to_check) {
+int GameFramework::checkForCollision(Ogre::Vector3* to_check) {
 	for (int i = 0; i < worldObjects.size(); ++i) {
 		if (to_check->squaredDistance(worldObjects[i].ourNode->getPosition()) < Ogre::Math::Sqr(worldObjects[i].collisionRadius + 5)) {
 			return i;
@@ -285,7 +256,7 @@ int BasicTutorial4::checkForCollision(Ogre::Vector3* to_check) {
 }
 
 //-------------------------------------------------------------------------------------
-bool BasicTutorial4::processUnbufferedInput(const Ogre::FrameEvent& evt)
+bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 {
 	static bool mMouseDown = false;     // If a mouse button is depressed
 	static bool affixCamera = true;
@@ -410,7 +381,7 @@ extern "C" {
 #endif
     {
         // Create application object
-        BasicTutorial4 app;
+        GameFramework app;
 
         try {
             app.go();
