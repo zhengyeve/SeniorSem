@@ -2,3 +2,5 @@ This is the senior seminar project repository
 for Eve, Clayton and Matt. YARRRR!
 
 Hello There!
+
+Alrighty, you gotta use the ogre_test folder as your project directory, hopefully the project settings will be loaded correctly and all. The "myMedia" folder has to be placed in your ogre folder (on mine it's C:/OgreSDK) and the two .material files have to be placed in the scripts folder in ogre (C:\OgreSDK\media\materials\scripts on mine). Then hopefully things will work... IJKLUO to move the ninja, and if you press 1 the camera stops sticking to the ninja and you can fly around independently using WASD + mouse.
