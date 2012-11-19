@@ -30,6 +30,7 @@ public:
     virtual ~GameFramework(void);
     
 private:
+	//DATA MEMBERS
 	//stores global variables for rendering the terrain, like how detailed it should be, etc.
     Ogre::TerrainGlobalOptions* mTerrainGlobals;
 
@@ -43,8 +44,10 @@ private:
 	OgreBites::Label* mInfoLabel;
 
 	//stores all the objects in the world, such as trees
-	vector<WorldObject> worldObjects;
+	vector<WorldObject*> worldObjects;
  
+
+	//FUNCTIONS
 	//checks to see if the the terrain files have been generated or not, and loads them in if they have. If they haven't, it takes a while to generate them.
 	//for this reason, the game will take a while to start up the first time you run it on a particular map, but subsequent loads will be much faster.
     void defineTerrain(long x, long y);
@@ -62,10 +65,13 @@ private:
 	//returns the index of the collided object in the worldObjects vector, or -1 if no collision occurred.
 	int checkForCollision(Ogre::Vector3* to_check);
 
-protected:
-	//sets up everything before the game starts running, kinda like a main function for our game
-    virtual void createScene(void);
+	//deletes an object in the world
+	void removeWorldObject(int index);
 
+	//covers the world in plants
+	void populatePlants(void);
+
+protected:
 	//creates a frame listener base object which runs every time another frame is queued. Later we register the "frameRenderingQueued" function as our listener function
 	//with this base object, and then the base object will call our function whenever a frame is queued for rendering. A frame is a still picture rendered to the screen,
 	//usually at a rate of aroud 50-60 per second for our game, giving the illusion of smooth-ish movement. There are different frame listeners for when the frame is starting
@@ -73,6 +79,9 @@ protected:
 	//about to be drawn to the screen ("frameRenderingQueued") is so we can do computationally expensive tasks with the CPU while the drawing goes on with the GPU or graphics card,
 	//as opposed to doing the expensive tasks while the GPU is idled and not making full use of both.
     virtual void createFrameListener(void);
+
+	//sets up everything before the game starts running, kinda like a main function for our game
+    virtual void createScene(void);
 
 	//creates the scene. 
     virtual void destroyScene(void);

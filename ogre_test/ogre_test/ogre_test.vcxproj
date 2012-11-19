@@ -12,12 +12,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\BaseApplication.cpp" />
-    <ClCompile Include="..\TutorialApplication.cpp" />
+    <ClCompile Include="..\GameFramework.cpp" />
+    <ClCompile Include="..\PlantManager.cpp" />
+    <ClCompile Include="..\TreeObject.cpp" />
     <ClCompile Include="..\WorldObject.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\BaseApplication.h" />
-    <ClInclude Include="..\TutorialApplication.h" />
+    <ClInclude Include="..\GameFramework.h" />
+    <ClInclude Include="..\PlantManager.h" />
+    <ClInclude Include="..\TreeObject.h" />
     <ClInclude Include="..\WorldObject.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
