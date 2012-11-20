@@ -181,8 +181,16 @@ void GameFramework::populatePlants(void) {
 	worldObjects.resize(worldObjects.size());
 }
 
+
+
+static unsigned long TotalScore;
+
+
 void GameFramework::createScene(void)
 { 
+
+	
+	TotalScore = 0;
 	//create a console so we can print debug statements
 	AllocConsole();
 	freopen("CONOUT$","wb",stdout);
@@ -310,6 +318,7 @@ void GameFramework::removeWorldObject(int index) {
 	delete(temp);
 }
 
+
 bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 {
 	static bool mMouseDown = false;     // If a mouse button is depressed
@@ -337,6 +346,8 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 			if (worldObjects[coll_index]->receiveAction(ACTION_CHOP,5)) {
 				//an object returns true when it wants to be destroyed
 				removeWorldObject(coll_index);
+				TotalScore += 5;
+				cout<<"You've successfully killed a tree! Your current score is: "<<TotalScore<<endl<<endl;
 			}
 		} else {
 			cout << "No collision.\n"; //debug statement
