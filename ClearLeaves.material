@@ -1,4 +1,4 @@
-material Materials/ClearLeaves
+material Materials/ClearGray
 {
 	technique
 	{
@@ -11,7 +11,47 @@ material Materials/ClearLeaves
 
 			texture_unit
 			{
-				texture clearLeaves.png
+				texture clearGray.png
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material Materials/Trees/ClearOak
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			scene_blend alpha_blend
+			depth_write off
+			diffuse vertexcolour
+
+			texture_unit
+			{
+				texture clearOak.png
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material Materials/Trees/ClearPine
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			scene_blend alpha_blend
+			depth_write off
+			diffuse vertexcolour
+
+			texture_unit
+			{
+				texture clearPine.png
 				tex_address_mode clamp
 			}
 		}

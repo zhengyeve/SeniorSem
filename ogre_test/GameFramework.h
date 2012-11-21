@@ -45,7 +45,7 @@ private:
 
 	//stores all the objects in the world, such as trees
 	vector<WorldObject*> worldObjects;
- 
+
 
 	//FUNCTIONS
 	//checks to see if the the terrain files have been generated or not, and loads them in if they have. If they haven't, it takes a while to generate them.

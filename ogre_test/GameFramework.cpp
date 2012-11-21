@@ -152,16 +152,20 @@ void GameFramework::populatePlants(void) {
 			if (to_place != PLANT_NONE) {
 				//initialize this before the switch statement, since you can't do that inside...
 				Ogre::Entity* tree_entity;
+				Ogre::ResourcePtr clear_mat;
 				//change the model based on what plant we're placing
 				switch(to_place) {
 					case PLANT_OAK:
-						tree_entity = mSceneMgr->createEntity("tree.mesh");
+						tree_entity = mSceneMgr->createEntity("oaktree.mesh");
+						clear_mat = Ogre::MaterialManager::getSingleton().getByName("Materials/Trees/ClearOak");
 						break;
 					case PLANT_PINE:
 						tree_entity = mSceneMgr->createEntity("pinetree.mesh");
+						clear_mat = Ogre::MaterialManager::getSingleton().getByName("Materials/Trees/ClearPine");
 						break;
 					case PLANT_ROUND_SHROOM:
 						tree_entity = mSceneMgr->createEntity("roundshroom.mesh");
+						clear_mat = Ogre::MaterialManager::getSingleton().getByName("Materials/ClearGray");
 						break;
 				};
 				new_pos.x = i*min_plant_spacing;
@@ -174,23 +178,18 @@ void GameFramework::populatePlants(void) {
 				//give the tree a random rotation about the y-axis, so the trees aren't all aligned on a grid
 				Ogre::Radian rot_angle((Ogre::Real)(rand()%7));
 				temp_node->rotate(Ogre::Vector3(0,1,0),rot_angle);
-				worldObjects.push_back(new TreeObject(temp_node,2));
+				TreeObject* new_obj = new TreeObject(temp_node,2);
+				new_obj->clearMat = clear_mat;
+				new_obj->primaryMat = tree_entity->getSubEntity(0)->getMaterial();
+				worldObjects.push_back(new_obj);
 			}
 		}
 	}
 	worldObjects.resize(worldObjects.size());
 }
 
-
-
-static unsigned long TotalScore;
-
-
 void GameFramework::createScene(void)
 { 
-
-	
-	TotalScore = 0;
 	//create a console so we can print debug statements
 	AllocConsole();
 	freopen("CONOUT$","wb",stdout);
@@ -267,9 +266,16 @@ void GameFramework::createFrameListener(void)
  
     mInfoLabel = mTrayMgr->createLabel(OgreBites::TL_TOP, "TInfo", "", 350);
 }
+
 //-------------------------------------------------------------------------------------
 bool GameFramework::frameRenderingQueued(const Ogre::FrameEvent& evt)
 {
+	if (mWindow->isClosed()) return false;
+    if (mShutDown) return false;
+    mKeyboard->capture();
+    mMouse->capture();
+    mTrayMgr->frameRenderingQueued(evt);
+
     bool ret = BaseApplication::frameRenderingQueued(evt);
 
     if (mTerrainGroup->isDerivedDataUpdateInProgress())
@@ -318,15 +324,15 @@ void GameFramework::removeWorldObject(int index) {
 	delete(temp);
 }
 
-
 bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 {
 	static bool mMouseDown = false;     // If a mouse button is depressed
 	static bool affixCamera = true;
-    static float key_cooldown = 0.0;    // Cooldown remaining for key presses
     static Ogre::Real mRotate = 0.13;   // The rotate constant
+	static unsigned long totalScore = 0;
 	Ogre::SceneNode* ninja_node = mSceneMgr->getSceneNode("NinjaNode");
 	static Ogre::Real mMove = 400*ninja_node->getScale().x;      // The movement constant
+	
 	bool currMouse = mMouse->getMouseState().buttonDown(OIS::MB_Left);
 
 	//if the mouse is pressed (currMouse) and wasn't pressed last frame, then they clicked
@@ -341,104 +347,102 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 		//check for collisions with that new point, and if something was hit we apply an action to it
 		int coll_index = checkForCollision(&ninja_pos);
 		if (coll_index != -1) {
-			cout << "Collided with " << coll_index << endl; //debug statement
+			cout << "Performed action on " << coll_index << endl; //debug statement
 			//apply the action. ACTION_CHOP is the only one so far, so use it
 			if (worldObjects[coll_index]->receiveAction(ACTION_CHOP,5)) {
 				//an object returns true when it wants to be destroyed
 				removeWorldObject(coll_index);
-				TotalScore += 5;
-				cout<<"You've successfully killed a tree! Your current score is: "<<TotalScore<<endl<<endl;
+				totalScore += 5;
+				cout << "You've successfully killed a tree! Your current score is: "<<totalScore<<endl<<endl;
 			}
 		} else {
-			cout << "No collision.\n"; //debug statement
+			cout << "Nothing within action range.\n"; //debug statement
 		}
 	}
 	//record the mouse state for the next frame's use
 	mMouseDown = currMouse;
 
-	//key_cooldown is a timer to prevent the system from registering a million keypresses during the short period of time a key is held down after a keypress.
-	key_cooldown -= evt.timeSinceLastFrame;
-	//if it has been more than a half second and the key "1" is pressed down...
-	if ((key_cooldown < 0 ) && mKeyboard->isKeyDown(OIS::KC_1))
+	//use key 1 and 2 to toggle fixed camera on and off
+	if (mKeyboard->isKeyDown(OIS::KC_1))
 	{
-		//reset the cooldown and toggle the variable that determined whether the camera is stuck to the ninja
-		key_cooldown  = 0.5;
-		affixCamera = !affixCamera;
+		affixCamera = true;
+	} else if(mKeyboard->isKeyDown(OIS::KC_2))
+	{
+		affixCamera = false;
 	}
 
 	Ogre::Vector3 transVector = Ogre::Vector3::ZERO;
-
+	bool movementChange = false;
 	if (mKeyboard->isKeyDown(OIS::KC_I)) // Forward
 	{
 		transVector.z -= mMove;
+		movementChange = true;
 	}
 	if (mKeyboard->isKeyDown(OIS::KC_K)) // Backward
 	{
 		transVector.z += mMove;
+		movementChange = true;
 	}
-
 	if (mKeyboard->isKeyDown(OIS::KC_J)) // Left yaw
 	{
-			mSceneMgr->getSceneNode("NinjaNode")->yaw(Ogre::Degree(mRotate * 20));
+		mSceneMgr->getSceneNode("NinjaNode")->yaw(Ogre::Degree(mRotate * 20));
+		movementChange = true;
 	}
 	if (mKeyboard->isKeyDown(OIS::KC_U)) // Left strafe
 	{
 		transVector.x -= mMove;
+		movementChange = true;
 	}
 	if (mKeyboard->isKeyDown(OIS::KC_L)) // Right yaw
 	{
 		mSceneMgr->getSceneNode("NinjaNode")->yaw(Ogre::Degree(-mRotate * 20));
+		movementChange = true;
 	}
 	if (mKeyboard->isKeyDown(OIS::KC_O)) // Right strafe
 	{
 		transVector.x += mMove;
-	}
-	if (mKeyboard->isKeyDown(OIS::KC_U)) // Up
-	{
-		transVector.y += mMove;
-	}
-	if (mKeyboard->isKeyDown(OIS::KC_O)) // Down
-	{
-		transVector.y -= mMove;
+		movementChange = true;
 	}
 
-	//move the ninja in whatever direction
-	ninja_node->translate(transVector * evt.timeSinceLastFrame, Ogre::Node::TS_LOCAL);
-	//set the new position's height to be the height of the terrain at that location (so it doesn't fly when it walks off a cliff)
-	Ogre::Vector3 ninja_pos = ninja_node->getPosition();
-	ninja_pos.y = mTerrainGroup->getHeightAtWorldPosition(ninja_pos);
+	if (movementChange) {
+		//move the ninja in whatever direction
+		ninja_node->translate(transVector * evt.timeSinceLastFrame, Ogre::Node::TS_LOCAL);
+		//set the new position's height to be the height of the terrain at that location (so it doesn't fly when it walks off a cliff)
+		Ogre::Vector3 ninja_pos = ninja_node->getPosition();
+		ninja_pos.y = mTerrainGroup->getHeightAtWorldPosition(ninja_pos);
 
-	//if the new position isn't colliding with an object, make that our position and update the camera. Otherwise, move back to where we were.
-	if (checkForCollision(&ninja_pos) == -1) {
-		ninja_node->setPosition(ninja_pos);
+		//if the new position isn't colliding with an object, make that our position and update the camera. Otherwise, move back to where we were.
+		if (checkForCollision(&ninja_pos) == -1) {
+			ninja_node->setPosition(ninja_pos);
 		
-		//if the sticky camera is toggled, move it with the ninja
-		if (affixCamera) {
-			//changes the distance according to the subject's scale, so it's not right up against a giant object and super far from a tiny one.
-			mCamera->setPosition(ninja_pos - Ogre::Vector3(0, -(1200*ninja_node->getScale().x), 1200*ninja_node->getScale().x));
-			mCamera->lookAt(ninja_pos);
-		}
-	} else {
-		ninja_node->translate(-1 * transVector * evt.timeSinceLastFrame, Ogre::Node::TS_LOCAL);
-	}
-
-	//Check to see if each object is closer to the camera than the player's character, and if so change the material to something transparent
-	for (int i = 0; i < worldObjects.size(); ++i) {
-		Ogre::Entity* temp = static_cast<Ogre::Entity*>(worldObjects[i]->ourNode->getAttachedObject(0));
-		//if distance from ninja to camera is greater than the distance from camera to object...
-		if (ninja_node->getPosition().squaredDistance(mCamera->getPosition()) > mCamera->getPosition().squaredDistance(worldObjects[i]->ourNode->getPosition())) {
-			//if it's not already transparent, make it so
-			if (!worldObjects[i]->isClear) {
-				temp->setMaterial(Ogre::MaterialManager::getSingleton().getByName("Materials/ClearLeaves"));
-				worldObjects[i]->isClear = true;
+			//if the sticky camera is toggled, move it with the ninja
+			if (affixCamera) {
+				//changes the distance according to the subject's scale, so it's not right up against a giant object and super far from a tiny one.
+				mCamera->setPosition(ninja_pos - Ogre::Vector3(0, -(1200*ninja_node->getScale().x), 1200*ninja_node->getScale().x));
+				mCamera->lookAt(ninja_pos);
 			}
 		} else {
-			if (worldObjects[i]->isClear) {
-				temp->setMaterial(Ogre::MaterialManager::getSingleton().getByName("Material"));
+			ninja_node->translate(-1 * transVector * evt.timeSinceLastFrame, Ogre::Node::TS_LOCAL);
+		}
+
+		//Check to see if each object is closer to the camera than the player's character, and if so change the material to something transparent
+		for (int i = 0; i < worldObjects.size(); ++i) {
+			Ogre::Entity* temp = static_cast<Ogre::Entity*>(worldObjects[i]->ourNode->getAttachedObject(0));
+			double camToObj = mCamera->getPosition().squaredDistance(worldObjects[i]->ourNode->getPosition());
+			//if distance from ninja to camera is greater than the distance from camera to object...
+			if (affixCamera && ninja_node->getPosition().squaredDistance(mCamera->getPosition()) > camToObj) {
+				//if it's not already transparent, make it so
+				if (!worldObjects[i]->isClear) {
+					temp->setMaterial(worldObjects[i]->clearMat);
+					worldObjects[i]->isClear = true;
+				}
+			} else if (worldObjects[i]->isClear) {
+				temp->setMaterial(worldObjects[i]->primaryMat);
 				worldObjects[i]->isClear = false;
 			}
 		}
 	}
+
     return true;
 }
 //-------------------------------------------------------------------------------------
