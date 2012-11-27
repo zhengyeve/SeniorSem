@@ -41,8 +41,9 @@ private:
 	//whether the terrain has been sucessfully imported
     bool mTerrainsImported;
 
-	//a text label for displaying messages at the top of the screen (e.g. "Please wait while terrain is generated...")
-	OgreBites::Label* mInfoLabel;
+	//text labels for displaying player conditions
+	OgreBites::Label* scoreLabel;
+	OgreBites::Label* hungerLabel;
 
 	//stores all the objects in the world, such as trees
 	vector<WorldObject*> worldObjects;

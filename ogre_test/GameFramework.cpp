@@ -200,6 +200,7 @@ void GameFramework::createScene(void)
 	AllocConsole();
 	freopen("CONOUT$","wb",stdout);
 	srand((int)std::time(NULL));
+	totalScore = 0;
 
 	//make sure the exit timer hasn't started
 	exitTimer = -1;
@@ -258,6 +259,7 @@ void GameFramework::createScene(void)
 
 	playerObject = new CreatureObject(node, 5);
 	playerObject->speed = 400*node->getScale().x;
+	playerObject->hunger = 10;
 
 	mCamera->setPosition(Ogre::Vector3(0, 50, 50));
 	mCamera->lookAt(node->getPosition());
@@ -276,7 +278,11 @@ void GameFramework::createFrameListener(void)
 {
 	BaseApplication::createFrameListener();
  
-    mInfoLabel = mTrayMgr->createLabel(OgreBites::TL_TOP, "TInfo", "", 350);
+    scoreLabel = mTrayMgr->createLabel(OgreBites::TL_TOP, "ScoreBox", "", 200);
+	hungerLabel = mTrayMgr->createLabel(OgreBites::TL_BOTTOMRIGHT,"HungerBox","",200);
+	mTrayMgr->createLabel(OgreBites::TL_TOP,"DeathBox","YOU ARE DEAD!",300);
+	mTrayMgr->getWidget("DeathBox")->hide();
+	mTrayMgr->removeWidgetFromTray("DeathBox");
 }
 
 //-------------------------------------------------------------------------------------
@@ -295,21 +301,25 @@ bool GameFramework::frameRenderingQueued(const Ogre::FrameEvent& evt)
 		}
 	}
 
-	mTrayMgr->moveWidgetToTray(mInfoLabel, OgreBites::TL_TOP, 0);
-    mInfoLabel->show();
+	mTrayMgr->moveWidgetToTray(scoreLabel, OgreBites::TL_TOP, 0);
+    scoreLabel->show();
+	mTrayMgr->moveWidgetToTray(hungerLabel, OgreBites::TL_BOTTOMRIGHT, 0);
+    hungerLabel->show();
 
 	playerObject->hunger -= evt.timeSinceLastFrame;
 	if (playerObject->hunger < 0) {
 		if (exitTimer < 0) {
-			exitTimer = 10;
-			mInfoLabel->setCaption("Starved to death! :c");
+			exitTimer = 2;
+			hungerLabel->setCaption("Starved to death! :c");
+			mTrayMgr->moveWidgetToTray("DeathBox", OgreBites::TL_CENTER, 0);
+			mTrayMgr->getWidget("DeathBox")->show();
 		}
 	} else {
 		char hungerStr[10];
 		itoa((int) floor(playerObject->hunger + 0.5),hungerStr,10);
 		char caption[20] = "Hunger: ";
 		strcat(caption,hungerStr);
-		mInfoLabel->setCaption(caption);
+		hungerLabel->setCaption(caption);
 	}
 
     bool ret = BaseApplication::frameRenderingQueued(evt);
@@ -324,7 +334,7 @@ bool GameFramework::frameRenderingQueued(const Ogre::FrameEvent& evt)
 		stringstream strstm;
 		strstm << totalScore;
 		str += strstm.str();
-        mInfoLabel->setCaption(str);
+        scoreLabel->setCaption(str);
 
         if (mTerrainsImported)
         {
@@ -360,7 +370,6 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 	static bool mMouseDown = false;     // If a mouse button is depressed
 	static bool affixCamera = true;
     static Ogre::Real mRotate = 0.13;   // The rotate constant
-	static unsigned long totalScore = 0;
 	static Ogre::Real mMove = playerObject->speed;      // The movement constant
 	
 	bool currMouse = mMouse->getMouseState().buttonDown(OIS::MB_Left);
