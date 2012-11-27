@@ -1,3 +1,4 @@
+
 #include "TreeObject.h"
 
 TreeObject::TreeObject(Ogre::SceneNode* node, float collision_radius) {

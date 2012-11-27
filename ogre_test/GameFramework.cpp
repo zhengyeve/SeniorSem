@@ -14,11 +14,14 @@ This source file is part of the
       http://www.ogre3d.org/tikiwiki/
 -----------------------------------------------------------------------------
 */
+
 #include "GameFramework.h"
 #include <OgreMath.h>
 #include "TreeObject.h"
 #include "CreatureObject.h"
 #include "PlantManager.h"
+
+static unsigned long totalScore = 0;
 
 GameFramework::GameFramework(void)
 {
@@ -313,6 +316,16 @@ bool GameFramework::frameRenderingQueued(const Ogre::FrameEvent& evt)
 
     if (!mTerrainGroup->isDerivedDataUpdateInProgress())
     {
+//        mTrayMgr->removeWidgetFromTray(mInfoLabel);
+//        mInfoLabel->hide();
+
+	// score display handling
+		string str = "Your current score: ";
+		stringstream strstm;
+		strstm << totalScore;
+		str += strstm.str();
+        mInfoLabel->setCaption(str);
+
         if (mTerrainsImported)
         {
             mTerrainGroup->saveAllTerrains(true);
@@ -438,7 +451,7 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 			//if the sticky camera is toggled, move it with the ninja
 			if (affixCamera) {
 				//changes the distance according to the subject's scale, so it's not right up against a giant object and super far from a tiny one.
-				mCamera->setPosition(ninja_pos - Ogre::Vector3(0, -(1200*ninja_node->getScale().x), 1200*ninja_node->getScale().x));
+				mCamera->setPosition(ninja_pos - Ogre::Vector3(0, -(1200*playerObject->ourNode->getScale().x), 1200*playerObject->ourNode->getScale().x));
 				mCamera->lookAt(ninja_pos);
 			}
 		} else {

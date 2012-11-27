@@ -53,7 +53,6 @@ private:
 	//the player's object
 	CreatureObject* playerObject;
 
-
 	//FUNCTIONS
 	//checks to see if the the terrain files have been generated or not, and loads them in if they have. If they haven't, it takes a while to generate them.
 	//for this reason, the game will take a while to start up the first time you run it on a particular map, but subsequent loads will be much faster.
