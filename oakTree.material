@@ -14,19 +14,19 @@ material _missing_material_
     }
 }
 
-// Material genrated by blender2ogre 0.5.8
+// OakMaterial genrated by blender2ogre 0.5.8
 
-material Material 
+material OakMaterial 
 {
     receive_shadows on 
 
     technique
     {
-        pass Material
+        pass OakMaterial
         {
-            ambient 0.800000011920929 0.800000011920929 0.800000011920929 1.0
-            diffuse 0.6400000190734865 0.6400000190734865 0.6400000190734865 1.0
-            specular 0.5 0.5 0.5 1.0 12.5
+            ambient 1.0 1.0 1.0 1.0
+            diffuse 0.800000011920929 0.800000011920929 0.800000011920929 1.0
+            specular 0.0 0.0 0.0 1.0 12.5
             emissive 0.0 0.0 0.0 1.0
 
             alpha_to_coverage off
@@ -48,7 +48,7 @@ material Material
 
             texture_unit 
             {
-                texture tree.png
+                texture oak_tree.png
                 tex_address_mode wrap
                 scale 1.0 1.0
                 colour_op modulate
