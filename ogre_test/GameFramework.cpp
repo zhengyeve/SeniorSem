@@ -181,6 +181,7 @@ void GameFramework::populatePlants(void) {
 				TreeObject* new_obj = new TreeObject(temp_node,2);
 				new_obj->clearMat = clear_mat;
 				new_obj->primaryMat = tree_entity->getSubEntity(0)->getMaterial();
+				new_obj->subtype = (int)to_place;
 				worldObjects.push_back(new_obj);
 			}
 		}
@@ -194,6 +195,10 @@ void GameFramework::createScene(void)
 	AllocConsole();
 	freopen("CONOUT$","wb",stdout);
 	srand((int)std::time(NULL));
+
+	//make sure the exit timer hasn't started
+	exitTimer = -1;
+	playerHunger = 50;
 
     Ogre::MaterialManager::getSingleton().setDefaultTextureFiltering(Ogre::TFO_ANISOTROPIC);
     Ogre::MaterialManager::getSingleton().setDefaultAnisotropy(7);
@@ -276,25 +281,34 @@ bool GameFramework::frameRenderingQueued(const Ogre::FrameEvent& evt)
     mMouse->capture();
     mTrayMgr->frameRenderingQueued(evt);
 
+	if (exitTimer > 0) {
+		exitTimer -= evt.timeSinceLastFrame;
+		if (exitTimer < 0.001) {
+			mShutDown = true;
+		}
+	}
+
+	mTrayMgr->moveWidgetToTray(mInfoLabel, OgreBites::TL_TOP, 0);
+    mInfoLabel->show();
+
+	playerHunger -= evt.timeSinceLastFrame;
+	if (playerHunger < 0) {
+		if (exitTimer < 0) {
+			exitTimer = 10;
+			mInfoLabel->setCaption("Starved to death! :c");
+		}
+	} else {
+		char hungerStr[10];
+		itoa((int) floor(playerHunger + 0.5),hungerStr,10);
+		char caption[20] = "Hunger: ";
+		strcat(caption,hungerStr);
+		mInfoLabel->setCaption(caption);
+	}
+
     bool ret = BaseApplication::frameRenderingQueued(evt);
 
-    if (mTerrainGroup->isDerivedDataUpdateInProgress())
+    if (!mTerrainGroup->isDerivedDataUpdateInProgress())
     {
-        mTrayMgr->moveWidgetToTray(mInfoLabel, OgreBites::TL_TOP, 0);
-        mInfoLabel->show();
-        if (mTerrainsImported)
-        {
-            mInfoLabel->setCaption("Building terrain, please wait...");
-        }
-        else
-        {
-            mInfoLabel->setCaption("Updating textures, patience...");
-        }
-    }
-    else
-    {
-        mTrayMgr->removeWidgetFromTray(mInfoLabel);
-        mInfoLabel->hide();
         if (mTerrainsImported)
         {
             mTerrainGroup->saveAllTerrains(true);
@@ -350,6 +364,9 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 			cout << "Performed action on " << coll_index << endl; //debug statement
 			//apply the action. ACTION_CHOP is the only one so far, so use it
 			if (worldObjects[coll_index]->receiveAction(ACTION_CHOP,5)) {
+				if (worldObjects[coll_index]->objectType == OBJECT_PLANT && worldObjects[coll_index]->subtype == (int)PLANT_ROUND_SHROOM) {
+					playerHunger += 10;
+				}
 				//an object returns true when it wants to be destroyed
 				removeWorldObject(coll_index);
 				totalScore += 5;
