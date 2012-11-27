@@ -14,7 +14,6 @@
     <ClCompile Include="..\BaseApplication.cpp" />
     <ClCompile Include="..\GameFramework.cpp" />
     <ClCompile Include="..\PlantManager.cpp" />
-    <ClCompile Include="..\stdafx.cpp" />
     <ClCompile Include="..\TreeObject.cpp" />
     <ClCompile Include="..\WorldObject.cpp" />
   </ItemGroup>
@@ -22,7 +21,6 @@
     <ClInclude Include="..\BaseApplication.h" />
     <ClInclude Include="..\GameFramework.h" />
     <ClInclude Include="..\PlantManager.h" />
-    <ClInclude Include="..\stdafx.h" />
     <ClInclude Include="..\TreeObject.h" />
     <ClInclude Include="..\WorldObject.h" />
   </ItemGroup>
@@ -82,13 +80,14 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(OGRE_HOME)\include;$(OGRE_HOME)\include\OIS;$(OGRE_HOME)\include\OGRE;$(OGRE_HOME)\Samples\Common\include;$(OGRE_HOME)\boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ForcedIncludeFiles>stdafx.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles>
+      </ForcedIncludeFiles>
       <AdditionalOptions>-Zm111 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>

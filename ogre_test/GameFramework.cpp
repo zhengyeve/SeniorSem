@@ -20,6 +20,8 @@ This source file is part of the
 #include "TreeObject.h"
 #include "PlantManager.h"
 
+static unsigned long totalScore = 0;
+
 GameFramework::GameFramework(void)
 {
 }
@@ -294,8 +296,17 @@ bool GameFramework::frameRenderingQueued(const Ogre::FrameEvent& evt)
     }
     else
     {
-        mTrayMgr->removeWidgetFromTray(mInfoLabel);
+//        mTrayMgr->removeWidgetFromTray(mInfoLabel);
 //        mInfoLabel->hide();
+
+	// score display handling
+		string str = "Your current score: ";
+		stringstream strstm;
+		strstm << totalScore;
+		str += strstm.str();
+        mInfoLabel->setCaption(str);
+
+
         if (mTerrainsImported)
         {
             mTerrainGroup->saveAllTerrains(true);
@@ -330,7 +341,7 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 	static bool mMouseDown = false;     // If a mouse button is depressed
 	static bool affixCamera = true;
     static Ogre::Real mRotate = 0.13;   // The rotate constant
-	static unsigned long totalScore = 0;
+
 	Ogre::SceneNode* ninja_node = mSceneMgr->getSceneNode("NinjaNode");
 	static Ogre::Real mMove = 400*ninja_node->getScale().x;      // The movement constant
 	
