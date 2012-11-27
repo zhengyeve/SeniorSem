@@ -205,8 +205,8 @@ void GameFramework::createScene(void)
 	//make sure the exit timer hasn't started
 	exitTimer = -1;
 
-    Ogre::MaterialManager::getSingleton().setDefaultTextureFiltering(Ogre::TFO_ANISOTROPIC);
-    Ogre::MaterialManager::getSingleton().setDefaultAnisotropy(7);
+	Ogre::MaterialManager::getSingleton().setDefaultTextureFiltering(Ogre::TFO_TRILINEAR);
+    //Ogre::MaterialManager::getSingleton().setDefaultAnisotropy(7);
 	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("../../myMedia","FileSystem");
 	Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
  
@@ -222,7 +222,7 @@ void GameFramework::createScene(void)
     mSceneMgr->setAmbientLight(Ogre::ColourValue(0.2, 0.2, 0.2));
  
     mTerrainGlobals = OGRE_NEW Ogre::TerrainGlobalOptions();
-    mTerrainGroup = OGRE_NEW Ogre::TerrainGroup(mSceneMgr, Ogre::Terrain::ALIGN_X_Z, 257, 3000.0f);
+    mTerrainGroup = OGRE_NEW Ogre::TerrainGroup(mSceneMgr, Ogre::Terrain::ALIGN_X_Z, 513, 3000.0f);
     mTerrainGroup->setFilenameConvention(Ogre::String("TestTerrain1"), Ogre::String("dat"));
     mTerrainGroup->setOrigin(Ogre::Vector3::ZERO);
  
@@ -259,7 +259,7 @@ void GameFramework::createScene(void)
 
 	playerObject = new CreatureObject(node, 5);
 	playerObject->speed = 400*node->getScale().x;
-	playerObject->hunger = 10;
+	playerObject->hunger = 100;
 
 	mCamera->setPosition(Ogre::Vector3(0, 50, 50));
 	mCamera->lookAt(node->getPosition());
