@@ -7,7 +7,7 @@
 
 //in the future this will have all the different types of actions
 enum ActionType{ACTION_CHOP};
-enum ObjectType{OBJECT_PLANT, OBJECT_PLAYER};
+enum ObjectType{OBJECT_PLANT, OBJECT_CREATURE};
 
 class WorldObject
 {

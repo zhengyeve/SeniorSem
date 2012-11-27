@@ -17,6 +17,7 @@ This source file is part of the
 #include "GameFramework.h"
 #include <OgreMath.h>
 #include "TreeObject.h"
+#include "CreatureObject.h"
 #include "PlantManager.h"
 
 GameFramework::GameFramework(void)
@@ -29,6 +30,7 @@ GameFramework::~GameFramework(void)
 	for (int i = 0; i < worldObjects.size(); ++i) {
 		delete(worldObjects[i]);
 	}
+	delete(playerObject);
 }
 
 void GameFramework::destroyScene(void)
@@ -198,7 +200,6 @@ void GameFramework::createScene(void)
 
 	//make sure the exit timer hasn't started
 	exitTimer = -1;
-	playerHunger = 50;
 
     Ogre::MaterialManager::getSingleton().setDefaultTextureFiltering(Ogre::TFO_ANISOTROPIC);
     Ogre::MaterialManager::getSingleton().setDefaultAnisotropy(7);
@@ -245,12 +246,15 @@ void GameFramework::createScene(void)
 	populatePlants();
 
 	Ogre::Entity* ninjaEntity = mSceneMgr->createEntity("Ninja", "ninja.mesh");
-	Ogre::SceneNode *node = mSceneMgr->getRootSceneNode()->createChildSceneNode("NinjaNode");
+	Ogre::SceneNode *node = mSceneMgr->getRootSceneNode()->createChildSceneNode("PlayerNode");
 	node->attachObject(ninjaEntity);
 	node->scale(0.06,0.06,0.06);
 	Ogre::Vector3 temp_pos = node->getPosition();
 	temp_pos.y = mTerrainGroup->getHeightAtWorldPosition(temp_pos);
 	node->setPosition(temp_pos);
+
+	playerObject = new CreatureObject(node, 5);
+	playerObject->speed = 400*node->getScale().x;
 
 	mCamera->setPosition(Ogre::Vector3(0, 50, 50));
 	mCamera->lookAt(node->getPosition());
@@ -291,15 +295,15 @@ bool GameFramework::frameRenderingQueued(const Ogre::FrameEvent& evt)
 	mTrayMgr->moveWidgetToTray(mInfoLabel, OgreBites::TL_TOP, 0);
     mInfoLabel->show();
 
-	playerHunger -= evt.timeSinceLastFrame;
-	if (playerHunger < 0) {
+	playerObject->hunger -= evt.timeSinceLastFrame;
+	if (playerObject->hunger < 0) {
 		if (exitTimer < 0) {
 			exitTimer = 10;
 			mInfoLabel->setCaption("Starved to death! :c");
 		}
 	} else {
 		char hungerStr[10];
-		itoa((int) floor(playerHunger + 0.5),hungerStr,10);
+		itoa((int) floor(playerObject->hunger + 0.5),hungerStr,10);
 		char caption[20] = "Hunger: ";
 		strcat(caption,hungerStr);
 		mInfoLabel->setCaption(caption);
@@ -323,7 +327,7 @@ bool GameFramework::frameRenderingQueued(const Ogre::FrameEvent& evt)
 
 int GameFramework::checkForCollision(Ogre::Vector3* to_check) {
 	for (int i = 0; i < worldObjects.size(); ++i) {
-		if (to_check->squaredDistance(worldObjects[i]->ourNode->getPosition()) < Ogre::Math::Sqr(worldObjects[i]->collisionRadius + 2)) {
+		if (to_check->squaredDistance(worldObjects[i]->ourNode->getPosition()) < Ogre::Math::Sqr(worldObjects[i]->collisionRadius + playerObject->collisionRadius)) {
 			return i;
 		}
 	}
@@ -344,8 +348,7 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 	static bool affixCamera = true;
     static Ogre::Real mRotate = 0.13;   // The rotate constant
 	static unsigned long totalScore = 0;
-	Ogre::SceneNode* ninja_node = mSceneMgr->getSceneNode("NinjaNode");
-	static Ogre::Real mMove = 400*ninja_node->getScale().x;      // The movement constant
+	static Ogre::Real mMove = playerObject->speed;      // The movement constant
 	
 	bool currMouse = mMouse->getMouseState().buttonDown(OIS::MB_Left);
 
@@ -354,9 +357,9 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 		//kinda hacky way to check where our action is projecting, we move the player forward a tad, record the new position, and then move back.
 		Ogre::Vector3 tempVector = Ogre::Vector3::ZERO;
 		tempVector.z -= 2;
-		ninja_node->translate(tempVector, Ogre::Node::TS_LOCAL);
-		Ogre::Vector3 ninja_pos = ninja_node->getPosition();
-		ninja_node->translate(-1 * tempVector, Ogre::Node::TS_LOCAL);
+		playerObject->ourNode->translate(tempVector, Ogre::Node::TS_LOCAL);
+		Ogre::Vector3 ninja_pos = playerObject->ourNode->getPosition();
+		playerObject->ourNode->translate(-1 * tempVector, Ogre::Node::TS_LOCAL);
 
 		//check for collisions with that new point, and if something was hit we apply an action to it
 		int coll_index = checkForCollision(&ninja_pos);
@@ -365,7 +368,7 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 			//apply the action. ACTION_CHOP is the only one so far, so use it
 			if (worldObjects[coll_index]->receiveAction(ACTION_CHOP,5)) {
 				if (worldObjects[coll_index]->objectType == OBJECT_PLANT && worldObjects[coll_index]->subtype == (int)PLANT_ROUND_SHROOM) {
-					playerHunger += 10;
+					playerObject->hunger += 10;
 				}
 				//an object returns true when it wants to be destroyed
 				removeWorldObject(coll_index);
@@ -402,7 +405,7 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 	}
 	if (mKeyboard->isKeyDown(OIS::KC_J)) // Left yaw
 	{
-		mSceneMgr->getSceneNode("NinjaNode")->yaw(Ogre::Degree(mRotate * 20));
+		playerObject->ourNode->yaw(Ogre::Degree(mRotate * 20));
 		movementChange = true;
 	}
 	if (mKeyboard->isKeyDown(OIS::KC_U)) // Left strafe
@@ -412,7 +415,7 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 	}
 	if (mKeyboard->isKeyDown(OIS::KC_L)) // Right yaw
 	{
-		mSceneMgr->getSceneNode("NinjaNode")->yaw(Ogre::Degree(-mRotate * 20));
+		playerObject->ourNode->yaw(Ogre::Degree(-mRotate * 20));
 		movementChange = true;
 	}
 	if (mKeyboard->isKeyDown(OIS::KC_O)) // Right strafe
@@ -423,14 +426,14 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 
 	if (movementChange) {
 		//move the ninja in whatever direction
-		ninja_node->translate(transVector * evt.timeSinceLastFrame, Ogre::Node::TS_LOCAL);
+		playerObject->ourNode->translate(transVector * evt.timeSinceLastFrame, Ogre::Node::TS_LOCAL);
 		//set the new position's height to be the height of the terrain at that location (so it doesn't fly when it walks off a cliff)
-		Ogre::Vector3 ninja_pos = ninja_node->getPosition();
+		Ogre::Vector3 ninja_pos = playerObject->ourNode->getPosition();
 		ninja_pos.y = mTerrainGroup->getHeightAtWorldPosition(ninja_pos);
 
 		//if the new position isn't colliding with an object, make that our position and update the camera. Otherwise, move back to where we were.
 		if (checkForCollision(&ninja_pos) == -1) {
-			ninja_node->setPosition(ninja_pos);
+			playerObject->ourNode->setPosition(ninja_pos);
 		
 			//if the sticky camera is toggled, move it with the ninja
 			if (affixCamera) {
@@ -439,7 +442,7 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 				mCamera->lookAt(ninja_pos);
 			}
 		} else {
-			ninja_node->translate(-1 * transVector * evt.timeSinceLastFrame, Ogre::Node::TS_LOCAL);
+			playerObject->ourNode->translate(-1 * transVector * evt.timeSinceLastFrame, Ogre::Node::TS_LOCAL);
 		}
 
 		//Check to see if each object is closer to the camera than the player's character, and if so change the material to something transparent
@@ -447,7 +450,7 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 			Ogre::Entity* temp = static_cast<Ogre::Entity*>(worldObjects[i]->ourNode->getAttachedObject(0));
 			double camToObj = mCamera->getPosition().squaredDistance(worldObjects[i]->ourNode->getPosition());
 			//if distance from ninja to camera is greater than the distance from camera to object...
-			if (affixCamera && ninja_node->getPosition().squaredDistance(mCamera->getPosition()) > camToObj) {
+			if (affixCamera && playerObject->ourNode->getPosition().squaredDistance(mCamera->getPosition()) > camToObj) {
 				//if it's not already transparent, make it so
 				if (!worldObjects[i]->isClear) {
 					temp->setMaterial(worldObjects[i]->clearMat);

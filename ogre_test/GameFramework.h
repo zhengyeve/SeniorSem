@@ -18,6 +18,7 @@ This source file is part of the
 #include <Terrain/OgreTerrain.h>
 #include <Terrain/OgreTerrainGroup.h>
 #include "BaseApplication.h"
+#include "CreatureObject.h"
 #include "WorldObject.h"
 #include <vector>
  
@@ -47,7 +48,10 @@ private:
 	vector<WorldObject*> worldObjects;
 
 	//If this is > 0, it's in the process of a countdown to exit
-	float exitTimer, playerHunger;
+	float exitTimer;
+
+	//the player's object
+	CreatureObject* playerObject;
 
 
 	//FUNCTIONS
