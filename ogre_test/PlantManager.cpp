@@ -53,7 +53,7 @@ PlantType PlantManager::getFlora(double height, float terrain_flatness) {
 	}*/
 
 	PlantType winner = PLANT_NONE;
-	float highest_score = 20; //increase number to decrease the chance plants will spawn / decrease the overall number of plants
+	float highest_score = 10; //increase number to decrease the chance plants will spawn / decrease the overall number of plants
 
 	for (unsigned int i = 0; i < plants.size(); ++i) {
 		//subtracts the difference between the height and the ideal height from the range, and divides it by the range.
