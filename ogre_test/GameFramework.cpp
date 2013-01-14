@@ -20,8 +20,12 @@ This source file is part of the
 #include "TreeObject.h"
 #include "CreatureObject.h"
 #include "PlantManager.h"
+#include "glew/glew.h"
 
 static unsigned long totalScore = 0;
+
+using namespace PolyVox;
+using namespace std;
 
 GameFramework::GameFramework(void)
 {
@@ -194,6 +198,124 @@ void GameFramework::populatePlants(void) {
 	worldObjects.resize(worldObjects.size());
 }
 
+//temporary helper function
+void createSphereInVolume(SimpleVolume<uint8_t>& volData, float fRadius)
+{
+	//This vector hold the position of the center of the volume
+	//Vector3DFloat v3dVolCenter(volData.getWidth() / 2, volData.getHeight() / 2, volData.getDepth() / 2);
+	Ogre::Vector3 v3dVolCenter(volData.getWidth() / 2, volData.getHeight() / 2, volData.getDepth() / 2);
+
+	//This three-level for loop iterates over every voxel in the volume
+	for (int z = 0; z < volData.getDepth(); z++)
+	{
+		for (int y = 0; y < volData.getHeight(); y++)
+		{
+			for (int x = 0; x < volData.getWidth(); x++)
+			{
+				//Store our current position as a vector...
+				Ogre::Vector3 v3dCurrentPos(x,y,z);	
+				//And compute how far the current position is from the center of the volume
+				float fDistToCenter = v3dCurrentPos.squaredDistance(v3dVolCenter);//.length();
+
+				uint8_t uVoxelValue = 0;
+
+				//If the current voxel is less than 'radius' units from the center then we make it solid.
+				if(fDistToCenter <= fRadius*fRadius)
+				{
+					//Our new voxel value
+					uVoxelValue = 255;
+				}
+
+				//Wrte the voxel value into the volume	
+				volData.setVoxelAt(x, y, z, uVoxelValue);
+			}
+		}
+	}
+}
+
+void GameFramework::addTerrainSurface(const PolyVox::SurfaceMesh<PositionMaterialNormal>& surfaceMesh)
+{	
+	// create a base object to add our data to
+	Ogre::ManualObject* ogreMesh = mSceneMgr->createManualObject("Map");
+
+	// Tell ogre we will be changing this object later
+	ogreMesh->setDynamic(true);
+
+	cout << "drawing map with " << surfaceMesh.getNoOfVertices() << " vertices\n";
+	
+	//begin defining the object
+	ogreMesh->begin("Examples/BeachStones", Ogre::RenderOperation::OT_TRIANGLE_LIST);
+	{	
+		double mapScale = 10;
+		float textureScale = 0.5;
+		const vector<PolyVox::PositionMaterialNormal>& vecVertices = surfaceMesh.getVertices();
+		const vector<uint32_t>& vecIndices = surfaceMesh.getIndices();
+		unsigned int uLodLevel = 0;
+		int beginIndex = surfaceMesh.m_vecLodRecords[uLodLevel].beginIndex;
+		int endIndex = surfaceMesh.m_vecLodRecords[uLodLevel].endIndex;
+		for(int index = beginIndex; index < endIndex; ++index) {
+			const PolyVox::PositionMaterialNormal& vertex = vecVertices[vecIndices[index]];
+			const PolyVox::Vector3DFloat& v3dVertexPos = vertex.getPosition();
+			const PolyVox::Vector3DFloat& v3dVertexNormal = vertex.getNormal();
+			//const PolyVox::Vector3DFloat v3dRegionOffset(uRegionX * g_uRegionSideLength, uRegionY * g_uRegionSideLength, uRegionZ * g_uRegionSideLength);
+			const PolyVox::Vector3DFloat v3dFinalVertexPos = v3dVertexPos + static_cast<PolyVox::Vector3DFloat>(surfaceMesh.m_Region.getLowerCorner());
+			ogreMesh->position(v3dFinalVertexPos.getX()*mapScale, v3dFinalVertexPos.getY()*mapScale, v3dFinalVertexPos.getZ()*mapScale);
+			ogreMesh->normal(v3dVertexNormal.getX(), v3dVertexNormal.getY(), v3dVertexNormal.getZ());
+			ogreMesh->textureCoord(v3dFinalVertexPos.getX()*textureScale, v3dFinalVertexPos.getY()*textureScale);
+			/*uint8_t mat = vertex.getMaterial() + 0.5;
+			uint8_t red = mat & 0xF0;
+			uint8_t green = mat & 0x03;
+			uint8_t blue = mat & 0x0C;*/
+			//ogreMesh->colour((index%11)/10.0, ((index+2)%11)/10.0, ((index+4)%11)/10.0);// just some random colors, I'm too lazy for hsv
+			//ogreMesh->colour(1,0,0);
+		}
+	}
+	//tell ogre we're done defining the object
+	ogreMesh->end();
+
+	//attach our object to the scene via a child node
+	Ogre::SceneNode* ogreNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("mapnode", Ogre::Vector3(0, 0, 0));
+	ogreNode->attachObject(ogreMesh);
+
+	cout << "map drawing finished\n";
+}
+
+void GameFramework::createMap() {
+	//Create an empty volume and then place a sphere in it
+	SimpleVolume<uint8_t> volData(PolyVox::Region(Vector3DInt32(0,0,0), Vector3DInt32(63, 63, 63)));
+	//createSphereInVolume(volData, 80);
+	//This three-level for loop iterates over every voxel in the volume
+	for (int z = 1; z < volData.getDepth()-1; z++)
+	{
+		for (int y = 1; y < volData.getHeight()-1; y++)
+		{
+			for (int x = 1; x < volData.getWidth()-1; x++)
+			{
+				if (y < volData.getHeight()/2.0){
+					if ((x+z)%5 != 0) {
+						volData.setVoxelAt(x, y, z, 255);
+					}
+				} else {
+					volData.setVoxelAt(x, y, z, 0);
+				}
+			}
+		}
+	}
+
+	//A mesh object to hold the result of surface extraction
+	SurfaceMesh<PositionMaterialNormal> mesh;
+
+	//Create a surface extractor. Comment out one of the following two lines to decide which type gets created.
+	CubicSurfaceExtractorWithNormals< SimpleVolume<uint8_t> > surfaceExtractor(&volData, volData.getEnclosingRegion(), &mesh);
+	//MarchingCubesSurfaceExtractor< SimpleVolume<uint8_t> > surfaceExtractor(&volData, volData.getEnclosingRegion(), &mesh);
+
+	//Execute the surface extractor.
+	surfaceExtractor.execute();
+
+	//Pass the surface to the ogre mesh renderer
+	addTerrainSurface(mesh);
+}
+
 void GameFramework::createScene(void)
 { 
 	//create a console so we can print debug statements
@@ -220,6 +342,7 @@ void GameFramework::createScene(void)
     light->setSpecularColour(Ogre::ColourValue(0.4, 0.4, 0.4));
  
     mSceneMgr->setAmbientLight(Ogre::ColourValue(0.2, 0.2, 0.2));
+	//mSceneMgr->setAmbientLight(Ogre::ColourValue(1, 1, 1));
  
     mTerrainGlobals = OGRE_NEW Ogre::TerrainGlobalOptions();
     mTerrainGroup = OGRE_NEW Ogre::TerrainGroup(mSceneMgr, Ogre::Terrain::ALIGN_X_Z, 513, 3000.0f);
@@ -272,6 +395,8 @@ void GameFramework::createScene(void)
 		removeWorldObject(collision_index);
 		collision_index = checkForCollision(&temp);
 	}
+
+	createMap();
 }
 //-------------------------------------------------------------------------------------
 void GameFramework::createFrameListener(void)
@@ -487,6 +612,7 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 
     return true;
 }
+
 //-------------------------------------------------------------------------------------
 
 
