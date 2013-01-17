@@ -21,11 +21,7 @@ This source file is part of the
 #include "CreatureObject.h"
 #include "WorldObject.h"
 #include <vector>
-#include "PolyVoxCore/CubicSurfaceExtractorWithNormals.h"
-#include "PolyVoxCore/MarchingCubesSurfaceExtractor.h"
-#include "PolyVoxCore/SurfaceMesh.h"
-#include "PolyVoxCore/SimpleVolume.h"
-#include "PolyVoxCore/Region.h"
+#include "MapChunk.h"
  
 using namespace std;
 
@@ -82,9 +78,6 @@ private:
 
 	//covers the world in plants
 	void populatePlants(void);
-
-	void addTerrainSurface(const PolyVox::SurfaceMesh<PolyVox::PositionMaterialNormal>& surfaceMesh);
-	void createMap(void);
 
 protected:
 	//creates a frame listener base object which runs every time another frame is queued. Later we register the "frameRenderingQueued" function as our listener function
