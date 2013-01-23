@@ -6,14 +6,16 @@
 #include "PolyVoxCore/MarchingCubesSurfaceExtractor.h"
 #include "PolyVoxCore/SurfaceMesh.h"
 #include "PolyVoxCore/Region.h"
-#include "PolyVoxCore/SimpleVolume.h"
+#include "PolyVoxCore/LargeVolume.h"
 #include <OgreSceneManager.h>
 #include <OgreManualObject.h>
+#include <string>
 
-#define MAP_SCALE 10
+#define VOXEL_SCALE 5
 #define TEXTURE_SCALE 0.5
 
 using namespace PolyVox;
+using namespace std;
 
 class MapChunk
 {
@@ -23,10 +25,11 @@ private:
 	SurfaceMesh<PositionMaterialNormal> chunkMesh;
 	bool changedSinceDrawn, isLoaded;
 	int lastLOD;
-	char* filename;
+	string filename;
 
 public:
-	MapChunk(char* filename);
+	Ogre::Vector3 chunkPosition;
+	MapChunk(string file_name, Ogre::Vector3 chunk_position, int num_voxels);
 	~MapChunk(void);
 	void draw(Ogre::SceneManager* mSceneMgr, int curLOD);
 	void unload();

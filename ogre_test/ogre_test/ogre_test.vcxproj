@@ -15,6 +15,7 @@
     <ClCompile Include="..\CreatureObject.cpp" />
     <ClCompile Include="..\GameFramework.cpp" />
     <ClCompile Include="..\MapChunk.cpp" />
+    <ClCompile Include="..\MapManager.cpp" />
     <ClCompile Include="..\PlantManager.cpp" />
     <ClCompile Include="..\TreeObject.cpp" />
     <ClCompile Include="..\WorldObject.cpp" />
@@ -24,6 +25,7 @@
     <ClInclude Include="..\CreatureObject.h" />
     <ClInclude Include="..\GameFramework.h" />
     <ClInclude Include="..\MapChunk.h" />
+    <ClInclude Include="..\MapManager.h" />
     <ClInclude Include="..\PlantManager.h" />
     <ClInclude Include="..\TreeObject.h" />
     <ClInclude Include="..\WorldObject.h" />

@@ -38,6 +38,7 @@ GameFramework::~GameFramework(void)
 		delete(worldObjects[i]);
 	}
 	delete(playerObject);
+	delete(mapManager);
 }
 
 void GameFramework::destroyScene(void)
@@ -276,14 +277,11 @@ void GameFramework::createScene(void)
 	while (collision_index != -1) {
 		removeWorldObject(collision_index);
 		collision_index = checkForCollision(&temp);
+		int a = 5;
 	}
 
-	char* filename = "testchunk";
-	mSceneMgr->getRootSceneNode()->createChildSceneNode(filename, Ogre::Vector3(0, 0, 0));
-	MapChunk test(filename);
-	test.draw(mSceneMgr, 0);
-	test.load();
-	test.draw(mSceneMgr, 0);
+	mapManager = new MapManager(64*VOXEL_SCALE);
+	mapManager->draw(0,0,0,mSceneMgr);
 }
 //-------------------------------------------------------------------------------------
 void GameFramework::createFrameListener(void)

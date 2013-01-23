@@ -22,6 +22,7 @@ This source file is part of the
 #include "WorldObject.h"
 #include <vector>
 #include "MapChunk.h"
+#include "MapManager.h"
  
 using namespace std;
 
@@ -54,6 +55,9 @@ private:
 
 	//the player's object
 	CreatureObject* playerObject;
+
+	//what contains the voxel map
+	MapManager* mapManager;
 
 	//FUNCTIONS
 	//checks to see if the the terrain files have been generated or not, and loads them in if they have. If they haven't, it takes a while to generate them.

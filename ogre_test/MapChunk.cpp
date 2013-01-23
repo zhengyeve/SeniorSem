@@ -7,29 +7,31 @@ using namespace std;
 using namespace Ogre;
 using namespace PolyVox;
 
-MapChunk::MapChunk(char* file_name) {
+MapChunk::MapChunk(string file_name, Ogre::Vector3 chunk_position, int num_voxels) {
+	chunkPosition = chunk_position;
 	filename = file_name;
 	isLoaded = true;
 	//tells the draw function to redraw our geometry
 	changedSinceDrawn = true;
 	//HACKY thing to tell the draw function not to delete the manual object on the first run...
 	lastLOD = -1;
-	chunkData = new SimpleVolume<uint8_t>(PolyVox::Region(Vector3DInt32(0,0,0), Vector3DInt32(63, 63, 63)));
+	chunkData = new SimpleVolume<uint8_t>(PolyVox::Region(Vector3DInt32(0,0,0), Vector3DInt32(num_voxels-1, num_voxels-1, num_voxels-1)));
 	//just to have something to delete in the future. Otherwise it throws an error when trying to delete the old simplifiedData that happens to be uninitialized
 	simplifiedData = new SimpleVolume<uint8_t>(PolyVox::Region(Vector3DInt32(0,0,0), Vector3DInt32(7, 7, 7)));
+	cout << "depth: " << chunkData->getDepth() << endl;
 	for (int z = 0; z < chunkData->getDepth(); z++)
 	{
 		for (int y = 0; y < chunkData->getHeight(); y++)
 		{
 			for (int x = 0; x < chunkData->getWidth(); x++)
 			{
-				if (x*y < chunkData->getHeight()){
-					if ((x+z)%5 != 0) {
+				//if (y < chunkData->getHeight()/2){
+					//if ((x+z)%5 != 0) {
 						chunkData->setVoxelAt(x, y, z, 255);
-					}
-				} else {
-					chunkData->setVoxelAt(x, y, z, 0);
-				}
+					//}
+				//} else {
+					//chunkData->setVoxelAt(x, y, z, 0);
+				//}
 			}
 		}
 	}
@@ -37,6 +39,7 @@ MapChunk::MapChunk(char* file_name) {
 
 MapChunk::~MapChunk(void) {
 	delete chunkData;
+	delete simplifiedData;
 }
 
 void MapChunk::reduceDetail(int LOD_level) {
@@ -68,6 +71,7 @@ void MapChunk::reduceDetail(int LOD_level) {
 		{
 			for (unsigned int x_group = 0; x_group < chunkData->getWidth(); x_group+=voxel_grouping)
 			{
+				//cout << "x_group: " << x_group << " depth: " << chunkData->getDepth() << " voxel_grouping: " << voxel_grouping << endl;
 				//clear these vectors in preparation for compiling a list of all materials in the volume, and their weighted counts
 				materials.clear();
 				counts.clear();
@@ -113,14 +117,14 @@ void MapChunk::reduceDetail(int LOD_level) {
 						winner = materials[i];
 					}
 				}
-				//cout << "Setting voxel at " << x_group << ", " << y_group << ", " << z_group << ") to " << winner << endl;
-				temp_data->setVoxelAt(x_group/voxel_grouping, y_group/voxel_grouping, z_group/voxel_grouping, winner);
+				//cout << "Setting voxel at " << x_group/voxel_grouping << ", " << y_group/voxel_grouping << ", " << z_group/voxel_grouping << ") to " << winner << " with a volume size of " << new_chunk_size << endl;
+				temp_data->setVoxelAt(x_group/voxel_grouping, y_group/voxel_grouping, z_group/voxel_grouping, 255);
 			}
 		}
 	}
 	delete simplifiedData;
 	simplifiedData = temp_data;
-	cout << "DECIMATION SUCCESSFUL\n";
+	cout << "DECIMATION SUCCESSFUL. SIZE OF RESULTING VOLUME: " << temp_data->getDepth() << endl;
 }
 
 void MapChunk::draw(Ogre::SceneManager* mSceneMgr, int curLOD) {
@@ -130,19 +134,24 @@ void MapChunk::draw(Ogre::SceneManager* mSceneMgr, int curLOD) {
 	}
 
 	//if the map has changed since it was last drawn, recreate it
-	if (changedSinceDrawn) {
+	if (changedSinceDrawn || curLOD != lastLOD) {
 		//reduce the detail of the map (for chunks far away from the player)
 		reduceDetail(curLOD);
 
 		//if the detail is reduced, run the mesh extractor on the simplified version of the data set.
 		if (curLOD != 0) {
-			MarchingCubesSurfaceExtractor< SimpleVolume<uint8_t> > surfaceExtractor(simplifiedData, simplifiedData->getEnclosingRegion(), &chunkMesh);
+			int vol_size = simplifiedData->getDepth();
+			MarchingCubesSurfaceExtractor< SimpleVolume<uint8_t> > surfaceExtractor(simplifiedData, PolyVox::Region(Vector3DInt32(-1,-1,-1), Vector3DInt32(vol_size+1, vol_size+1, vol_size+1)), &chunkMesh);
+			//MarchingCubesSurfaceExtractor< SimpleVolume<uint8_t> > surfaceExtractor(simplifiedData, PolyVox::Region(Vector3DInt32(0,0,0), Vector3DInt32(vol_size-1, vol_size-1, vol_size-1)), &chunkMesh);
 			//Execute the surface extractor.
 			surfaceExtractor.execute();
 		} else {
+			int vol_size = chunkData->getDepth();
 			//Create a surface extractor. Comment out one of the following two lines to decide which type gets created.
 			//CubicSurfaceExtractorWithNormals< SimpleVolume<uint8_t> > surfaceExtractor(chunkData, chunkData->getEnclosingRegion(), &chunkMesh);
-			MarchingCubesSurfaceExtractor< SimpleVolume<uint8_t> > surfaceExtractor(chunkData, chunkData->getEnclosingRegion(), &chunkMesh);//Execute the surface extractor.
+			MarchingCubesSurfaceExtractor< SimpleVolume<uint8_t> > surfaceExtractor(chunkData, PolyVox::Region(Vector3DInt32(-1,-1,-1), Vector3DInt32(vol_size+1, vol_size+1, vol_size+1)), &chunkMesh);
+			//MarchingCubesSurfaceExtractor< SimpleVolume<uint8_t> > surfaceExtractor(chunkData, PolyVox::Region(Vector3DInt32(0,0,0), Vector3DInt32(vol_size-1, vol_size-1, vol_size-1)), &chunkMesh);
+			//Execute the surface extractor.
 			surfaceExtractor.execute();
 		}
 
@@ -152,21 +161,25 @@ void MapChunk::draw(Ogre::SceneManager* mSceneMgr, int curLOD) {
 			mSceneMgr->destroyManualObject(filename);
 		}
 
+		cout << "Attempting to add object to " << filename << endl;
 		// create a base object to add our data to
 		Ogre::ManualObject* ogreMesh = mSceneMgr->createManualObject(filename);
 
 		// Tell ogre we will be changing this object later
 		//ogreMesh->setDynamic(true);
 
-		cout << "drawing map with " << chunkMesh.getNoOfVertices() << " vertices\n";
+		cout << "drawing map with " << chunkMesh.getNoOfVertices() << " vertices\n";		
+		double scale_offset = VOXEL_SCALE*pow((double)2, curLOD);
+
+		//scale the vertices by the LOD scale
+		chunkMesh.scaleVertices(scale_offset);
+		//chunkMesh.scaleVertices(600);
 	
 		//begin defining the object
 		ogreMesh->begin("Examples/BeachStones", Ogre::RenderOperation::OT_TRIANGLE_LIST);
 		{	
-			// the bigger this is, the bigger the voxel volume will be. Scale the map by the LOD so that simplified chunks won't be smaller
-			double mapScale = MAP_SCALE*pow((double)2,curLOD);
 			//want to scale this by the LOD too
-			float textureScale = TEXTURE_SCALE*curLOD;
+			float textureScale = 0.1;//TEXTURE_SCALE * pow((double)2, curLOD);
 			//convenient pointer to the vertices in the map mash
 			const std::vector<PolyVox::PositionMaterialNormal>& vecVertices = chunkMesh.getVertices();
 			//convenient pointer to the indices in the map mash
@@ -174,15 +187,19 @@ void MapChunk::draw(Ogre::SceneManager* mSceneMgr, int curLOD) {
 			unsigned int uLodLevel = 0; //Note to self: check on what this lod stuff does...
 			int beginIndex = chunkMesh.m_vecLodRecords[uLodLevel].beginIndex;
 			int endIndex = chunkMesh.m_vecLodRecords[uLodLevel].endIndex;
+			//cout << "beginIndex: " << beginIndex << " endIndex: " << endIndex << endl;
+			//cout << "Vec#: " << vecVertices.size() << endl;
+
 			for(int index = beginIndex; index < endIndex; ++index) {
 				const PolyVox::PositionMaterialNormal& vertex = vecVertices[vecIndices[index]];
 				const PolyVox::Vector3DFloat& v3dVertexPos = vertex.getPosition();
 				const PolyVox::Vector3DFloat& v3dVertexNormal = vertex.getNormal();
 				//const PolyVox::Vector3DFloat v3dRegionOffset(uRegionX * g_uRegionSideLength, uRegionY * g_uRegionSideLength, uRegionZ * g_uRegionSideLength);
 				const PolyVox::Vector3DFloat v3dFinalVertexPos = v3dVertexPos + static_cast<PolyVox::Vector3DFloat>(chunkMesh.m_Region.getLowerCorner());
-				ogreMesh->position(v3dFinalVertexPos.getX()*mapScale, v3dFinalVertexPos.getY()*mapScale, v3dFinalVertexPos.getZ()*mapScale);
+				//ogreMesh->position(v3dVertexPos.getX()-scale_offset, v3dVertexPos.getY()-scale_offset, v3dVertexPos.getZ()-scale_offset);
+				ogreMesh->position(v3dFinalVertexPos.getX(), v3dFinalVertexPos.getY(), v3dFinalVertexPos.getZ());
 				ogreMesh->normal(v3dVertexNormal.getX(), v3dVertexNormal.getY(), v3dVertexNormal.getZ());
-				ogreMesh->textureCoord(v3dFinalVertexPos.getX()*textureScale, v3dFinalVertexPos.getY()*textureScale);
+				ogreMesh->textureCoord(v3dVertexPos.getX()*textureScale, v3dVertexPos.getY()*textureScale);
 			}
 		}
 		//tell ogre we're done defining the object
@@ -216,5 +233,5 @@ void MapChunk::setVoxel(int32_t x, int32_t y, int32_t z, uint8_t data) {
 }
 
 uint8_t MapChunk::getVoxel(int32_t x, int32_t y, int32_t z) {
-	chunkData->getVoxelAt(x, y, z);
+	return chunkData->getVoxelAt(x, y, z);
 }
