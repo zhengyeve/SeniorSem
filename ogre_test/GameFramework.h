@@ -34,14 +34,6 @@ public:
     
 private:
 	//DATA MEMBERS
-	//stores global variables for rendering the terrain, like how detailed it should be, etc.
-    Ogre::TerrainGlobalOptions* mTerrainGlobals;
-
-	//stores the terrain pieces themselves
-    Ogre::TerrainGroup* mTerrainGroup;
-
-	//whether the terrain has been sucessfully imported
-    bool mTerrainsImported;
 
 	//text labels for displaying player conditions
 	OgreBites::Label* scoreLabel;
@@ -60,17 +52,6 @@ private:
 	MapManager* mapManager;
 
 	//FUNCTIONS
-	//checks to see if the the terrain files have been generated or not, and loads them in if they have. If they haven't, it takes a while to generate them.
-	//for this reason, the game will take a while to start up the first time you run it on a particular map, but subsequent loads will be much faster.
-    void defineTerrain(long x, long y);
-
-	//blends different terrain textures together based on terrain height (rocky up high, more dirt down low, etc) and saves that blend map for quick
-	//future use, so Ogre doesn't have to blend the textures every time it wants to render the terrain.
-    void initBlendMaps(Ogre::Terrain* terrain);
-
-	//configures default terrain options for us. Some of the defaults we override later, but it's good to have a base.
-    void configureTerrainDefaults(Ogre::Light* light);
-
 	//handles all input, like key presses or mouse clicks
 	bool processUnbufferedInput(const Ogre::FrameEvent& evt);
 
@@ -81,7 +62,7 @@ private:
 	void removeWorldObject(int index);
 
 	//covers the world in plants
-	void populatePlants(void);
+	void populatePlants(PolyVox::Region region);
 
 protected:
 	//creates a frame listener base object which runs every time another frame is queued. Later we register the "frameRenderingQueued" function as our listener function

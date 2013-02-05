@@ -5,28 +5,37 @@
 #include "PolyVoxCore/LargeVolume.h"
 #include <vector>
 
-#define MAP_SCALE 5
-
 using namespace std;
 
 class MapManager
 {
 private:
-	vector<MapChunk*> mapChunks;
 	PolyVox::LargeVolume<uint8_t>* mapData;
-	int32_t chunkSize;
 	int32_t maxDrawDist;
+	int32_t maxHeight;
+	//a list of all the chunks that have been changed since the last draw operation. They need to be redrawn.
+	vector<PolyVox::Vector3DInt32> changedChunks;
+	//a cache of chunks (up to 10?), so if we rapidly move back and forth on a chunk border, we won't have to delete and redraw three chunks every frame
+	vector<PolyVox::Vector3DInt32> chunkCache;
+	//the last player-inhabited chunk. If they've moved substantially, we need to change which chunks are drawn.
+	PolyVox::Vector3DInt32 lastPlayerChunk;
 
-	MapChunk* getChunkAt(int32_t x, int32_t y, int32_t z, Ogre::Vector3& pos_within_chunk);
+	void drawChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z, Ogre::SceneManager* mSceneMgr, bool remove_old);
 
 public:
-	MapManager(unsigned int chunk_size);
+	MapManager(void);
 	~MapManager(void);
-	void draw(int32_t player_x, int32_t player_y, int32_t player_z, Ogre::SceneManager* mSceneMgr);
+	//the force_redraw parameter makes the function redraw every little chunk, regardless of whether the LOD has changed or if it has been modified. This
+	//is computationally expensive, so use only when strictly necessary.
+	void draw(int32_t player_x, int32_t player_y, int32_t player_z, Ogre::SceneManager* mSceneMgr, bool force_redraw = false);
 	void setMaxDrawDist(unsigned int dist_from_player);
-	int32_t getHeightAt(int32_t x, int32_t y, int32_t z, unsigned int column_width);
-	void setVoxelAt(int32_t x, int32_t y, int32_t z, uint8_t value);
+	int32_t getHeightAt(int32_t x, int32_t y, int32_t z, int32_t column_width = 1);
+	//the queue_update tells the map manager whether or not this should add the affected chunk to the "need to be re-drawn" list. This is not desireable if,
+	//for example, you're setting a very large number of blocks in a chunk that's going to be updated anyway (ex; world-gen). If you want to force a global redraw,
+	//use the draw() function with force_redraw = true. Returns whether an update happened.
+	bool setVoxelAt(int32_t x, int32_t y, int32_t z, uint8_t value, bool queue_update = true);
 	uint8_t getVoxelAt(int32_t x, int32_t y, int32_t z);
+	uint32_t getMaxHeight(void);
 };
 
 #endif
