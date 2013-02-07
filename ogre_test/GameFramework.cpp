@@ -138,7 +138,7 @@ void GameFramework::createScene(void)
     light->setDiffuseColour(Ogre::ColourValue::White);
     light->setSpecularColour(Ogre::ColourValue(0.4, 0.4, 0.4));
  
-    mSceneMgr->setAmbientLight(Ogre::ColourValue(0.5, 0.5, 0.5));
+    mSceneMgr->setAmbientLight(Ogre::ColourValue(0.2, 0.2, 0.2));
 	//mSceneMgr->setAmbientLight(Ogre::ColourValue(1, 1, 1));
 
 	mapManager = new MapManager();
@@ -151,12 +151,13 @@ void GameFramework::createScene(void)
 	node->attachObject(ninjaEntity);
 	node->scale(0.006,0.006,0.006);
 	Ogre::Vector3 temp_pos = node->getPosition();
-	temp_pos.y = mapManager->getHeightAt(temp_pos.x, mapManager->getMaxHeight()+1, temp_pos.z);
+	temp_pos.y = mapManager->getHeightAt(temp_pos.x, mapManager->getMaxHeight()+1, temp_pos.z)+2;
 	cout << "Setting player's y to: " << temp_pos.y << " because we checked (" << temp_pos.x << ", " << mapManager->getMaxHeight() << ", " << temp_pos.z << ")\n";
 	node->setPosition(temp_pos);
 	Ogre::SceneNode* selector_node = node->createChildSceneNode("SelectorNode");
 	Ogre::Vector3 temp_vector = Ogre::Vector3::ZERO;
-	temp_vector.z -= 100;
+	temp_vector.z -= 250;
+	temp_vector.y += 80;
 	selector_node->translate(temp_vector, Ogre::Node::TS_LOCAL);
 	selector_node->attachObject(mSceneMgr->createEntity("Selector", "RoundShroom.mesh"));
 	selector_node->scale(10, 10, 10);
@@ -287,11 +288,11 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 		} else {
 			cout << "Nothing within action range.\n"; //debug statement
 		}*/
-		Ogre::Node* selector_node = playerObject->ourNode->getChild("SelectorNode");
-		//Ogre::Vector3 selector_pos = (selector_node->getPosition()*selector_node->getScale()) + (playerObject->ourNode->getPosition()+playerObject->ourNode->getScale());
-		Ogre::Vector3 selector_pos = (selector_node->getPosition()*playerObject->ourNode->getScale()) + playerObject->ourNode->getPosition();
+		Ogre::Vector3 selector_pos = (playerObject->ourNode->getOrientation()*(playerObject->ourNode->getChild("SelectorNode")->getPosition()*playerObject->ourNode->getScale()))+playerObject->ourNode->getPosition();
+		
+		double offset = 0.5;
 		//setVoxelAt() returns true if a change was made (i.e. setting a previously empty space to solid), so if it returns true we want to ask the map to redraw itself.
-		if (mapManager->setVoxelAt(selector_pos.x, selector_pos.y, selector_pos.z, 0)) {
+		if (mapManager->setVoxelAt(selector_pos.x+offset, selector_pos.y+0.2+offset, selector_pos.z+offset, 0)) {
 			//tell the map manager to redraw at the current position
 			mapManager->draw(playerObject->ourNode->getPosition().x, playerObject->ourNode->getPosition().y, playerObject->ourNode->getPosition().z, mSceneMgr);
 		}
@@ -300,21 +301,12 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 	last_left_mouse = cur_left_mouse;
 
 	if (cur_right_mouse) {
-		//kinda hacky way to check where our action is projecting, we move the player forward a tad, record the new position, and then move back.
-		Ogre::Vector3 temp_vector = Ogre::Vector3::ZERO;
-		temp_vector.z -= 1;
-		temp_vector.y += 1;
-		//translate the player forward in the direction they are looking (TS_LOCAL tells it to move relative to the object's orientation)
-		playerObject->ourNode->translate(temp_vector, Ogre::Node::TS_LOCAL);
+		Ogre::Vector3 selector_pos = (playerObject->ourNode->getOrientation()*(playerObject->ourNode->getChild("SelectorNode")->getPosition()*playerObject->ourNode->getScale()))+playerObject->ourNode->getPosition();
+		double offset = 0.5;
 		//set the voxel to solid where the action is. The setVoxelAt(...) function returns true if a change was made.
-		if (mapManager->setVoxelAt(playerObject->ourNode->getPosition().x, playerObject->ourNode->getPosition().y, playerObject->ourNode->getPosition().z, 255)) {
-			//move the player back
-			playerObject->ourNode->translate(-1 * temp_vector, Ogre::Node::TS_LOCAL);
+		if (mapManager->setVoxelAt(selector_pos.x+offset, selector_pos.y+0.2+offset, selector_pos.z+offset, 255)) {
 			//tell the map manager to redraw at the current position
 			mapManager->draw(playerObject->ourNode->getPosition().x, playerObject->ourNode->getPosition().y, playerObject->ourNode->getPosition().z, mSceneMgr);
-		} else {
-			//move the player back
-			playerObject->ourNode->translate(-1 * temp_vector, Ogre::Node::TS_LOCAL);
 		}
 	}
 	last_right_mouse = cur_right_mouse;
@@ -327,60 +319,127 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 	{
 		affixCamera = false;
 	}
-
-	Ogre::Vector3 transVector = Ogre::Vector3::ZERO;
-	bool movementChange = false;
-	if (mKeyboard->isKeyDown(OIS::KC_I)) // Forward
+	//use x and z to lower and raise the selector
+	if (mKeyboard->isKeyDown(OIS::KC_Z)) {
+		Ogre::Vector3 temp_vector = Ogre::Vector3::ZERO;
+		temp_vector.y += 2;
+		playerObject->ourNode->getChild("SelectorNode")->translate(temp_vector, Ogre::Node::TS_LOCAL);
+	} else if(mKeyboard->isKeyDown(OIS::KC_X))
 	{
-		transVector.z -= mMove;
-		movementChange = true;
+		Ogre::Vector3 temp_vector = Ogre::Vector3::ZERO;
+		temp_vector.y -= 2;
+		playerObject->ourNode->getChild("SelectorNode")->translate(temp_vector, Ogre::Node::TS_LOCAL);
 	}
-	if (mKeyboard->isKeyDown(OIS::KC_K)) // Backward
+	float acceleration = 0.17;
+	float max_speed = 5;
+	float rest_threshold = 0.001;
+	if (mKeyboard->isKeyDown(OIS::KC_I)) // Forward key pressed
 	{
-		transVector.z += mMove;
-		movementChange = true;
+		if (-playerObject->momentum.z < max_speed) {
+			playerObject->momentum.z -= acceleration;
+		}
+	} else if (playerObject->momentum.z < -rest_threshold) {
+		playerObject->momentum.z += acceleration;
+		if (playerObject->momentum.z > rest_threshold) {
+			playerObject->momentum.z = 0;
+		}
+	}
+	if (mKeyboard->isKeyDown(OIS::KC_K)) // Backward key pressed
+	{
+		if (playerObject->momentum.z < max_speed) {
+			playerObject->momentum.z += acceleration;
+		}
+	} else if (playerObject->momentum.z > rest_threshold) {
+		playerObject->momentum.z -= acceleration;
+		if (playerObject->momentum.z < -rest_threshold) {
+			playerObject->momentum.z = 0;
+		}
 	}
 	if (mKeyboard->isKeyDown(OIS::KC_J)) // Left yaw
 	{
-		playerObject->ourNode->yaw(Ogre::Degree(mRotate * 20));
-		movementChange = true;
+		playerObject->ourNode->yaw(Ogre::Degree(mRotate * 10));
 	}
 	if (mKeyboard->isKeyDown(OIS::KC_U)) // Left strafe
 	{
-		transVector.x -= mMove;
-		movementChange = true;
+		if (-playerObject->momentum.x < max_speed) {
+			playerObject->momentum.x -= acceleration;
+		}
+	} else if (-playerObject->momentum.x > rest_threshold) {
+		playerObject->momentum.x += acceleration;
+		if (playerObject->momentum.x > rest_threshold) {
+			playerObject->momentum.x = 0;
+		}
 	}
 	if (mKeyboard->isKeyDown(OIS::KC_L)) // Right yaw
 	{
-		playerObject->ourNode->yaw(Ogre::Degree(-mRotate * 20));
-		movementChange = true;
+		playerObject->ourNode->yaw(Ogre::Degree(-mRotate * 10));
 	}
 	if (mKeyboard->isKeyDown(OIS::KC_O)) // Right strafe
 	{
-		transVector.x += mMove;
-		movementChange = true;
+		if (playerObject->momentum.x < max_speed) {
+			playerObject->momentum.x += acceleration;
+		}
+	} else if (playerObject->momentum.x > rest_threshold) {
+		playerObject->momentum.x -= acceleration;
+		if (playerObject->momentum.x < -rest_threshold) {
+			playerObject->momentum.x = 0;
+		}
+	}
+	float jump_speed = 1.5;
+	if (mKeyboard->isKeyDown(OIS::KC_SPACE) && (playerObject->momentum.y < jump_speed)) // Space bar (jump)
+	{
+		playerObject->momentum.y += acceleration;
 	}
 
-	if (movementChange) {
+	if ((abs(playerObject->momentum.x) > rest_threshold) || (abs(playerObject->momentum.y) > rest_threshold) || (abs(playerObject->momentum.z) > rest_threshold)) {
 		//move the ninja in whatever direction
-		playerObject->ourNode->translate(transVector * evt.timeSinceLastFrame, Ogre::Node::TS_LOCAL);
+		playerObject->ourNode->translate(playerObject->momentum * evt.timeSinceLastFrame, Ogre::Node::TS_LOCAL);
 		//set the new position's height to be the height of the terrain at that location (so it doesn't fly when it walks off a cliff)
-		Ogre::Vector3 ninja_pos = playerObject->ourNode->getPosition();
-		float ninja_height = playerObject->ourNode->getScale().y * 80;
-		ninja_pos.y = mapManager->getHeightAt(ninja_pos.x,ninja_pos.y+1,ninja_pos.z)+ninja_height;
+		Ogre::Vector3 player_pos = playerObject->ourNode->getPosition();
+		float player_height = playerObject->ourNode->getScale().y * 80; //* 170;
+		//player_pos.y = mapManager->getHeightAt(player_pos.x,player_pos.y+1,player_pos.z)+player_height;
 
 		//if the new position isn't colliding with an object, make that our position and update the camera. Otherwise, move back to where we were.
-		if (checkForCollision(&ninja_pos) == -1) {
-			playerObject->ourNode->setPosition(ninja_pos);
-		
+		if (checkForCollision(&player_pos) == -1) {
+			double height_diff = mapManager->getAveragedHeightAt(player_pos.x,player_pos.y+1,player_pos.z) - player_pos.y + player_height;
+			if (abs(height_diff) > 0.2) {
+				height_diff = max(height_diff, (mapManager->getAveragedHeightAt(player_pos.x,player_pos.y+2,player_pos.z) - player_pos.y + player_height));
+			}
+			cout << "Height diff: " << height_diff << endl;
+			float hop_threshold = 0.1;
+			//if it's a small height difference, make the player hop up
+			if ((height_diff >= hop_threshold) && (height_diff < 1)) {
+				playerObject->momentum.y+=acceleration;
+				cout << "Fly, you fool!\n";
+			} //if the height difference is higher, stop the player
+			else if (height_diff > 1) {
+				playerObject->ourNode->translate(-playerObject->momentum * evt.timeSinceLastFrame, Ogre::Node::TS_LOCAL);
+				playerObject->momentum.x = 0;
+				playerObject->momentum.y = 0;
+				playerObject->momentum.z = 0;
+			} else if ((height_diff < hop_threshold) && (height_diff > -hop_threshold)) {
+				playerObject->momentum.y = 0;
+				Ogre::Vector3 temp_vec(0,height_diff/100,0);
+				playerObject->ourNode->translate(temp_vec);
+				cout << "Levelling\n";
+			} else {
+				if ((-playerObject->momentum.y < max_speed) && (!mKeyboard->isKeyDown(OIS::KC_SPACE))) {
+					playerObject->momentum.y -= acceleration;
+				}
+			}
+			//player_pos = playerObject->ourNode->getPosition();
+			//playerObject->ourNode->setPosition(player_pos);
 			//if the sticky camera is toggled, move it with the ninja
 			if (affixCamera) {
 				//changes the distance according to the subject's scale, so it's not right up against a giant object and super far from a tiny one.
-				mCamera->setPosition(ninja_pos - Ogre::Vector3(0, -(1200*playerObject->ourNode->getScale().x), 1200*playerObject->ourNode->getScale().x));
-				mCamera->lookAt(ninja_pos);
+				//mCamera->setPosition(player_pos - Ogre::Vector3(0, -(1200*playerObject->ourNode->getScale().x), 1200*playerObject->ourNode->getScale().x));
+				//mCamera->lookAt(player_pos);
+				Ogre::Vector3 camera_pos = player_pos;
+				camera_pos.y += 1;
+				mCamera->setPosition(camera_pos);
 			}
 		} else {
-			playerObject->ourNode->translate(-1 * transVector * evt.timeSinceLastFrame, Ogre::Node::TS_LOCAL);
+			playerObject->ourNode->translate(-playerObject->momentum * evt.timeSinceLastFrame, Ogre::Node::TS_LOCAL);
 		}
 
 		//Check to see if each object is closer to the camera than the player's character, and if so change the material to something transparent
@@ -399,6 +458,10 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 				worldObjects[i]->isClear = false;
 			}
 		}
+	}
+
+	if (affixCamera) {
+		mCamera->lookAt((playerObject->ourNode->getOrientation()*(playerObject->ourNode->getChild("SelectorNode")->getPosition()*playerObject->ourNode->getScale()))+playerObject->ourNode->getPosition());
 	}
 
     return true;

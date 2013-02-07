@@ -90,7 +90,7 @@ void MapManager::drawChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z, Og
 	//map_mesh.scaleVertices(MAP_SCALE);
 	
 	//begin defining the object
-	ogreMesh->begin("Examples/BeachStones", Ogre::RenderOperation::OT_TRIANGLE_LIST);
+	ogreMesh->begin("Examples/GrassFloor", Ogre::RenderOperation::OT_TRIANGLE_LIST);
 	{	
 		//want to scale this by the LOD too
 		float textureScale = 0.1;//TEXTURE_SCALE * pow((double)2, curLOD);
@@ -113,7 +113,7 @@ void MapManager::drawChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z, Og
 			//ogreMesh->position(v3dVertexPos.getX()-scale_offset, v3dVertexPos.getY()-scale_offset, v3dVertexPos.getZ()-scale_offset);
 			ogreMesh->position(v3dFinalVertexPos.getX(), v3dFinalVertexPos.getY(), v3dFinalVertexPos.getZ());
 			ogreMesh->normal(v3dVertexNormal.getX(), v3dVertexNormal.getY(), v3dVertexNormal.getZ());
-			ogreMesh->textureCoord(v3dVertexPos.getX()*textureScale, v3dVertexPos.getY()*textureScale);
+			ogreMesh->textureCoord(v3dVertexPos.getZ()*textureScale, v3dVertexPos.getX()*textureScale);
 		}
 	}
 	//tell ogre we're done defining the object
@@ -296,6 +296,28 @@ void MapManager::setMaxDrawDist(unsigned int dist_from_player) {
 	maxDrawDist = dist_from_player;
 }
 
+double MapManager::getAveragedHeightAt(double x, double y, double z) {
+	int32_t primary_x = x;
+	int32_t primary_z = z;
+	float remainder_x = x - primary_x;
+	float remainder_z = z - primary_z;
+	int32_t secondary_x = x + (1.0 - remainder_x);
+	int32_t secondary_z = z + (1.0 - remainder_z);
+	int32_t primary_height = getHeightAt(primary_x, y, primary_z);
+	int32_t secondary_height = getHeightAt(secondary_x, y, secondary_z);
+	if (primary_height == -999) {
+		if (secondary_height == -999) {
+			return -999;
+		} else {
+			return secondary_height;
+		}
+	} else if (secondary_height == -999) {
+		return primary_height;
+	} else {
+		return (((remainder_x * secondary_height) + ((1.0 - remainder_x) * primary_height) + (remainder_z * secondary_height) + ((1.0 - remainder_z) * primary_height)) / 2.0);
+	}
+}
+
 int32_t MapManager::getHeightAt(int32_t x, int32_t y, int32_t z, int32_t column_size) {
 	//cout << "Checking height (" << x << ", " << y << ", " << z << ")\n";
 	Vector3DInt32 point(x, y, z);
@@ -335,19 +357,26 @@ bool MapManager::setVoxelAt(int32_t x, int32_t y, int32_t z, uint8_t value, bool
 			maxHeight = y;
 		}
 		if (queue_update) {
-			//add the affected chunk to the list of changed chunks, so we know to re-draw it (unless it's already in there)
-			bool foundit = false;
-			Vector3DInt32 changed_chunk = getChunkAt(x,y,z);
-			for (unsigned int i = 0; i < changedChunks.size(); ++i) {
-				if ((changedChunks[i].getX() == changed_chunk.getX()) && (changedChunks[i].getY() == changed_chunk.getY()) && (changedChunks[i].getZ() == changed_chunk.getZ())) {
-					foundit = true;
-					break;
+			for (int32_t chunk_x = x - 1; chunk_x < x + 2; ++chunk_x) {
+				for (int32_t chunk_y = y - 1; chunk_y < y + 2; ++chunk_y) {
+					for (int32_t chunk_z = z - 1; chunk_z < z + 2; ++chunk_z) {
+						//add the affected chunk to the list of changed chunks, so we know to re-draw it (unless it's already in there)
+						bool foundit = false;
+						Vector3DInt32 changed_chunk = getChunkAt(chunk_x,chunk_y,chunk_z);
+						for (unsigned int i = 0; i < changedChunks.size(); ++i) {
+							if ((changedChunks[i].getX() == changed_chunk.getX()) && (changedChunks[i].getY() == changed_chunk.getY()) && (changedChunks[i].getZ() == changed_chunk.getZ())) {
+								foundit = true;
+								break;
+							}
+						}
+						//if it wasn't already present in the list of changed chunks, add it in.
+						if (!foundit) {
+							changedChunks.push_back(changed_chunk);
+							//cout << "Setting voxel at (" << x << ", " << y << ", " << z << ") which is in " << getChunkName(changed_chunk) << endl;
+							cout << "Adding chunk " << getChunkName(changed_chunk) << " to the changed list.\n";
+						}
+					}
 				}
-			}
-			//if it wasn't already present in the list of changed chunks, add it in.
-			if (!foundit) {
-				changedChunks.push_back(changed_chunk);
-				cout << "Setting voxel at (" << x << ", " << y << ", " << z << ") which is in " << getChunkName(changed_chunk) << endl;
 			}
 		}
 		mapData->setVoxelAt(x, y, z, value);

@@ -29,7 +29,10 @@ public:
 	//is computationally expensive, so use only when strictly necessary.
 	void draw(int32_t player_x, int32_t player_y, int32_t player_z, Ogre::SceneManager* mSceneMgr, bool force_redraw = false);
 	void setMaxDrawDist(unsigned int dist_from_player);
+	//gets the highest voxel in a column of size column_width, going downwards from the point
 	int32_t getHeightAt(int32_t x, int32_t y, int32_t z, int32_t column_width = 1);
+	//gets an averaged height for a point, going downwards from (x, y, z)
+	double getAveragedHeightAt(double x, double y, double z);
 	//the queue_update tells the map manager whether or not this should add the affected chunk to the "need to be re-drawn" list. This is not desireable if,
 	//for example, you're setting a very large number of blocks in a chunk that's going to be updated anyway (ex; world-gen). If you want to force a global redraw,
 	//use the draw() function with force_redraw = true. Returns whether an update happened.

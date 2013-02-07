@@ -7,6 +7,7 @@ CreatureObject::CreatureObject(Ogre::SceneNode* node, float collision_radius) {
 	objectType = OBJECT_CREATURE;
 	hunger = 50;
 	speed = 1;
+	momentum.x = momentum.y = momentum.z = 0;
 }
 
 bool CreatureObject::receiveAction(ActionType action_type, double action_var) {

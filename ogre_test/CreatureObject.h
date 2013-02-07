@@ -13,6 +13,7 @@ public:
 	//hunger counts down to zero eventually, killing the creature unless it eats
 	float hunger;
 	double speed;
+	Ogre::Vector3 momentum;
 };
 
 #endif
