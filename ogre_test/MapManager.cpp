@@ -1,27 +1,108 @@
 #include "MapManager.h"
 #include <string>
 #include <math.h>
+#include "PolyVoxCore\DefaultMarchingCubesController.h"
+#include "PolyVoxCore\LowPassFilter.h"
 
 using namespace std;
 using namespace PolyVox;
 
+/*template<typename VoxelType>
+class ExtractorController
+{
+public:
+    typedef VoxelType DensityType;
+    typedef float MaterialType;
+   
+    ExtractorController(void) {
+        m_tThreshold = ((std::numeric_limits<DensityType>::min)() + (std::numeric_limits<DensityType>::max)()) / 2;
+    }
+   
+    ExtractorController(DensityType tThreshold) {
+        m_tThreshold = tThreshold;
+    }
+   
+    DensityType convertToDensity(VoxelType voxel) {
+		if (voxel != 0) {
+			return 120;
+		} else {
+			return 0;
+		}
+    }
+   
+    MaterialType convertToMaterial(VoxelType voxel) {
+        return voxel;
+    }
+   
+    DensityType getThreshold(void) {
+        return m_tThreshold;
+    }
+   
+private:
+    DensityType m_tThreshold;
+};*/
+
+class ExtractorController
+{
+public:
+	typedef uint8_t DensityType;
+    typedef uint8_t MaterialType;
+
+    ExtractorController(void) {
+        m_tThreshold = ((MaterialDensityPair88::getMinDensity()) + (MaterialDensityPair88::getMaxDensity())) / 2;
+    }
+
+	ExtractorController(uint16_t tThreshold) {
+        m_tThreshold = tThreshold;
+    }
+   
+    uint16_t convertToDensity(MaterialDensityPair88 voxel) {
+		return voxel.getDensity();
+    }
+   
+    uint16_t convertToMaterial(MaterialDensityPair88 voxel) {
+		return voxel.getMaterial();
+    }
+   
+    uint16_t getThreshold(void) {
+        return m_tThreshold;
+    }
+   
+private:
+    uint16_t m_tThreshold;
+};
+
+/*void MapManager::smoothTerrain(void) {
+	PolyVox::Vector3DInt32 bot_left = mapData->getEnclosingRegion().getLowerCorner();
+	PolyVox::Vector3DInt32 top_right = mapData->getEnclosingRegion().getUpperCorner();
+
+	for (int x = bot_left.getX(); x < top_right.getX(); ++x) {
+		for (int y = bot_left.getY(); y < top_right.getY(); ++y) {
+			for (int z = bot_left.getZ(); z < top_right.getZ(); ++z) {
+			}
+		}
+	}
+}*/
+
 MapManager::MapManager(void) {
 	maxDrawDist = 100;
 	maxHeight = -100;
-	mapData = new LargeVolume<uint8_t>(Region(Vector3DInt32(-200,-200,-200), Vector3DInt32(200,200,200)));
+	mapData = new LargeVolume<MaterialDensityPair88>(Region(Vector3DInt32(-200,-200,-200), Vector3DInt32(200,200,200)));
 	cout << "Creating map.\n";
 	for (int x = -200; x < 200; ++x) {
 		for (int y = -200; y < 200; ++y) {
 			for (int z = -200; z < 200; ++z) {
 				if ((y+sin((double)z*0.05)*10) < 30) {
-					setVoxelAt(x,y,z,255,false);
+					setMaterialAt(x,y,z,255,false);
 				} else {
-					setVoxelAt(x,y,z,0,false);
+					setMaterialAt(x,y,z,0,false);
 				}
 				//cout << "Map data at : " << mapData->getVoxelAt(x,y,z) << endl;
 			}
 		}
 	}
+	//LowPassFilter< LargeVolume<MaterialDensityPair88>, LargeVolume<MaterialDensityPair88>, MaterialDensityPair88 > pass1(mapData, mapData->getEnclosingRegion(), mapData, mapData->getEnclosingRegion(), 3);
+	//pass1.execute();
 	cout << "Finished map creation.\n";
 	lastPlayerChunk = Vector3DInt32(-999,-999,-999);
 }
@@ -66,7 +147,9 @@ void MapManager::drawChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z, Og
 	Region render_region(Vector3DInt32(chunk_x,chunk_y,chunk_z), Vector3DInt32(chunk_x+32,chunk_y+32,chunk_z+32));
 	mapData->prefetch(render_region);
 	cout << "Beginning chunk surface extraction...\n";
-	MarchingCubesSurfaceExtractor< LargeVolume<uint8_t> > surfaceExtractor(mapData, render_region, &map_mesh);
+	//DefaultMarchingCubesController<uint8_t> controller = ExtractorController<uint8_t>(1);
+	//DefaultMarchingCubesController<int32_t> controller();
+	MarchingCubesSurfaceExtractor< LargeVolume<MaterialDensityPair88>, ExtractorController > surfaceExtractor(mapData, render_region, &map_mesh, ExtractorController());
 	//CubicSurfaceExtractorWithNormals< LargeVolume<uint8_t> > surfaceExtractor(mapData, render_region, &map_mesh);
 	//Execute the surface extractor.
 	surfaceExtractor.execute();
@@ -90,10 +173,10 @@ void MapManager::drawChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z, Og
 	//map_mesh.scaleVertices(MAP_SCALE);
 	
 	//begin defining the object
-	ogreMesh->begin("Examples/GrassFloor", Ogre::RenderOperation::OT_TRIANGLE_LIST);
+	ogreMesh->begin("TerrainMaterial", Ogre::RenderOperation::OT_TRIANGLE_LIST);
 	{	
 		//want to scale this by the LOD too
-		float textureScale = 0.1;//TEXTURE_SCALE * pow((double)2, curLOD);
+		float textureScale = 100;//TEXTURE_SCALE * pow((double)2, curLOD);
 		//convenient pointer to the vertices in the map mash
 		const std::vector<PolyVox::PositionMaterialNormal>& vecVertices = map_mesh.getVertices();
 		//convenient pointer to the indices in the map mash
@@ -104,6 +187,8 @@ void MapManager::drawChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z, Og
 		//cout << "beginIndex: " << beginIndex << " endIndex: " << endIndex << endl;
 		//cout << "Vec#: " << vecVertices.size() << endl;
 
+		int last_mat = 0;
+		int vert_count = 0;
 		for(int index = beginIndex; index < endIndex; ++index) {
 			const PolyVox::PositionMaterialNormal& vertex = vecVertices[vecIndices[index]];
 			const PolyVox::Vector3DFloat& v3dVertexPos = vertex.getPosition();
@@ -113,7 +198,23 @@ void MapManager::drawChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z, Og
 			//ogreMesh->position(v3dVertexPos.getX()-scale_offset, v3dVertexPos.getY()-scale_offset, v3dVertexPos.getZ()-scale_offset);
 			ogreMesh->position(v3dFinalVertexPos.getX(), v3dFinalVertexPos.getY(), v3dFinalVertexPos.getZ());
 			ogreMesh->normal(v3dVertexNormal.getX(), v3dVertexNormal.getY(), v3dVertexNormal.getZ());
-			ogreMesh->textureCoord(v3dVertexPos.getZ()*textureScale, v3dVertexPos.getX()*textureScale);
+			int tex_x = v3dVertexPos.getX()*textureScale;
+			int tex_y = v3dVertexPos.getZ()*textureScale;
+			tex_x %= 256;
+			tex_y %= 256;
+			//tex_x += 64;
+			//tex_y += 64;
+			//cout << "Tex x: " << tex_x << " Tex y: " << tex_y << endl;
+			if ((vert_count%3) == 0) {
+				last_mat = vecVertices[vecIndices[index]].getMaterial();
+			}
+			if (last_mat == 254) {
+				//cout << "CHANGING TEX\n";
+				tex_x += 768;
+				tex_y += 768;
+			}
+			ogreMesh->textureCoord(tex_x/1024.0, tex_y/1024.0);
+			++vert_count;
 		}
 	}
 	//tell ogre we're done defining the object
@@ -296,7 +397,9 @@ void MapManager::setMaxDrawDist(unsigned int dist_from_player) {
 	maxDrawDist = dist_from_player;
 }
 
+//tries to interpolate height values at a given point
 double MapManager::getAveragedHeightAt(double x, double y, double z) {
+	//use integer precision dropping to get the integer values on either side of the target. E.g. if going for an x value of 2.3, we want to check x=2 and x=3
 	int32_t primary_x = x;
 	int32_t primary_z = z;
 	float remainder_x = x - primary_x;
@@ -305,14 +408,10 @@ double MapManager::getAveragedHeightAt(double x, double y, double z) {
 	int32_t secondary_z = z + (1.0 - remainder_z);
 	int32_t primary_height = getHeightAt(primary_x, y, primary_z);
 	int32_t secondary_height = getHeightAt(secondary_x, y, secondary_z);
-	if (primary_height == -999) {
-		if (secondary_height == -999) {
-			return -999;
-		} else {
-			return secondary_height;
-		}
-	} else if (secondary_height == -999) {
-		return primary_height;
+	//if the two points are far apart, don't interpolate the values, just get the higher of the two. For example, if you're walking on a narrow bridge above a chasm,
+	//you don't want it to interpolate values on the edge of the bridge, since that would give you a point halfway to the bottom of the chasm.
+	if (abs(secondary_height-primary_height) > 1) {
+		return max(primary_height, secondary_height);
 	} else {
 		return (((remainder_x * secondary_height) + ((1.0 - remainder_x) * primary_height) + (remainder_z * secondary_height) + ((1.0 - remainder_z) * primary_height)) / 2.0);
 	}
@@ -332,9 +431,10 @@ int32_t MapManager::getHeightAt(int32_t x, int32_t y, int32_t z, int32_t column_
 			for (int32_t check_x = x - column_size + 1; check_x < x + column_size; ++check_x) {
 				//will have to change this if we implement other non-solid voxel values (such as smoke)
 				//cout << "Checking height (" << check_x << ", " << check_y << ", " << check_z << ")\n";
-				if (getVoxelAt(check_x, check_y, check_z) != 0) {
+				MaterialDensityPair88 voxel_val = getVoxelAt(check_x, check_y, check_z);
+				if (voxel_val.getMaterial() != 0) {
 					//cout << "Result: " << check_y << endl;
-					return check_y;
+					return (check_y - ((255 - voxel_val.getDensity())/255.0));
 				}
 			}
 		}
@@ -344,14 +444,15 @@ int32_t MapManager::getHeightAt(int32_t x, int32_t y, int32_t z, int32_t column_
 	return -999;
 }
 
-bool MapManager::setVoxelAt(int32_t x, int32_t y, int32_t z, uint8_t value, bool queue_update) {
+bool MapManager::setMaterialAt(int32_t x, int32_t y, int32_t z, uint8_t value, bool queue_update) {
 	/*Vector3DInt32 point(x, y, z);
 	if (!mapData->getEnclosingRegion().containsPoint(point)) {
 		cout << "Tried to set point (" << x << ", " << y << ", " << z << ") which is outside the volume.\n";
 		return;
 	}*/
-	//will have to change this if we implement more gases other than air (0)
-	if (getVoxelAt(x,y,z) != value) {
+	MaterialDensityPair88 voxel_val = getVoxelAt(x,y,z);
+
+	if (voxel_val.getMaterial() != value) {
 		if ((y > maxHeight) && (value > 0)) {
 			//cout << "New max height: " << y << " from setting point (" << x << ", " << y << ", " << z << ") to " << (unsigned int)value << ".\n";
 			maxHeight = y;
@@ -379,14 +480,25 @@ bool MapManager::setVoxelAt(int32_t x, int32_t y, int32_t z, uint8_t value, bool
 				}
 			}
 		}
-		mapData->setVoxelAt(x, y, z, value);
+		
+		if (value > 0) {
+			voxel_val.setDensity(255);
+			voxel_val.setMaterial(value);
+		} else {
+			if (voxel_val.getDensity() > 1) {
+				voxel_val.setDensity(voxel_val.getDensity()-1);
+			} else {
+				voxel_val.setMaterial(value);
+				voxel_val.setDensity(0);
+			}
+		}
+		mapData->setVoxelAt(x, y, z, voxel_val);
 		return true;
 	}
 	return false;
 }
 
-uint8_t MapManager::getVoxelAt(int32_t x, int32_t y, int32_t z) {
-	Vector3DInt32 point(x, y, z);
+ MaterialDensityPair88 MapManager::getVoxelAt(int32_t x, int32_t y, int32_t z) {
 	/*if (!mapData->getEnclosingRegion().containsPoint(point)) {
 		cout << "Tried to get point (" << x << ", " << y << ", " << z << ") which is outside the volume.\n";
 		return 0;

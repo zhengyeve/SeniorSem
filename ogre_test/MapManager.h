@@ -4,13 +4,14 @@
 #include "MapChunk.h"
 #include "PolyVoxCore/LargeVolume.h"
 #include <vector>
+#include "PolyVoxCore/MaterialDensityPair.h"
 
 using namespace std;
 
 class MapManager
 {
 private:
-	PolyVox::LargeVolume<uint8_t>* mapData;
+	PolyVox::LargeVolume<MaterialDensityPair88>* mapData;
 	int32_t maxDrawDist;
 	int32_t maxHeight;
 	//a list of all the chunks that have been changed since the last draw operation. They need to be redrawn.
@@ -21,6 +22,7 @@ private:
 	PolyVox::Vector3DInt32 lastPlayerChunk;
 
 	void drawChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z, Ogre::SceneManager* mSceneMgr, bool remove_old);
+	void smoothTerrain(void);
 
 public:
 	MapManager(void);
@@ -36,8 +38,8 @@ public:
 	//the queue_update tells the map manager whether or not this should add the affected chunk to the "need to be re-drawn" list. This is not desireable if,
 	//for example, you're setting a very large number of blocks in a chunk that's going to be updated anyway (ex; world-gen). If you want to force a global redraw,
 	//use the draw() function with force_redraw = true. Returns whether an update happened.
-	bool setVoxelAt(int32_t x, int32_t y, int32_t z, uint8_t value, bool queue_update = true);
-	uint8_t getVoxelAt(int32_t x, int32_t y, int32_t z);
+	bool setMaterialAt(int32_t x, int32_t y, int32_t z, uint8_t value, bool queue_update = true);
+	MaterialDensityPair88 getVoxelAt(int32_t x, int32_t y, int32_t z);
 	uint32_t getMaxHeight(void);
 };
 

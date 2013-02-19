@@ -290,9 +290,9 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 		}*/
 		Ogre::Vector3 selector_pos = (playerObject->ourNode->getOrientation()*(playerObject->ourNode->getChild("SelectorNode")->getPosition()*playerObject->ourNode->getScale()))+playerObject->ourNode->getPosition();
 		
-		double offset = 0.5;
+		double offset = 0;// 0.5;
 		//setVoxelAt() returns true if a change was made (i.e. setting a previously empty space to solid), so if it returns true we want to ask the map to redraw itself.
-		if (mapManager->setVoxelAt(selector_pos.x+offset, selector_pos.y+0.2+offset, selector_pos.z+offset, 0)) {
+		if (mapManager->setMaterialAt(selector_pos.x+offset, selector_pos.y+0.2+offset, selector_pos.z+offset, 0)) {
 			//tell the map manager to redraw at the current position
 			mapManager->draw(playerObject->ourNode->getPosition().x, playerObject->ourNode->getPosition().y, playerObject->ourNode->getPosition().z, mSceneMgr);
 		}
@@ -302,9 +302,9 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 
 	if (cur_right_mouse) {
 		Ogre::Vector3 selector_pos = (playerObject->ourNode->getOrientation()*(playerObject->ourNode->getChild("SelectorNode")->getPosition()*playerObject->ourNode->getScale()))+playerObject->ourNode->getPosition();
-		double offset = 0.5;
+		double offset = 0;// 0.5;
 		//set the voxel to solid where the action is. The setVoxelAt(...) function returns true if a change was made.
-		if (mapManager->setVoxelAt(selector_pos.x+offset, selector_pos.y+0.2+offset, selector_pos.z+offset, 255)) {
+		if (mapManager->setMaterialAt(selector_pos.x+offset, selector_pos.y+0.2+offset, selector_pos.z+offset, 254)) {
 			//tell the map manager to redraw at the current position
 			mapManager->draw(playerObject->ourNode->getPosition().x, playerObject->ourNode->getPosition().y, playerObject->ourNode->getPosition().z, mSceneMgr);
 		}
@@ -402,15 +402,15 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 		//if the new position isn't colliding with an object, make that our position and update the camera. Otherwise, move back to where we were.
 		if (checkForCollision(&player_pos) == -1) {
 			double height_diff = mapManager->getAveragedHeightAt(player_pos.x,player_pos.y+1,player_pos.z) - player_pos.y + player_height;
-			if (abs(height_diff) > 0.2) {
+			if (height_diff > 0.2) {
 				height_diff = max(height_diff, (mapManager->getAveragedHeightAt(player_pos.x,player_pos.y+2,player_pos.z) - player_pos.y + player_height));
 			}
-			cout << "Height diff: " << height_diff << endl;
+			//cout << "Height diff: " << height_diff << endl;
 			float hop_threshold = 0.1;
 			//if it's a small height difference, make the player hop up
 			if ((height_diff >= hop_threshold) && (height_diff < 1)) {
 				playerObject->momentum.y+=acceleration;
-				cout << "Fly, you fool!\n";
+				//cout << "Fly, you fool!\n";
 			} //if the height difference is higher, stop the player
 			else if (height_diff > 1) {
 				playerObject->ourNode->translate(-playerObject->momentum * evt.timeSinceLastFrame, Ogre::Node::TS_LOCAL);
@@ -421,7 +421,7 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 				playerObject->momentum.y = 0;
 				Ogre::Vector3 temp_vec(0,height_diff/100,0);
 				playerObject->ourNode->translate(temp_vec);
-				cout << "Levelling\n";
+				//cout << "Levelling\n";
 			} else {
 				if ((-playerObject->momentum.y < max_speed) && (!mKeyboard->isKeyDown(OIS::KC_SPACE))) {
 					playerObject->momentum.y -= acceleration;
