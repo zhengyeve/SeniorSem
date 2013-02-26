@@ -3,11 +3,18 @@
 
 #include "WorldObject.h"
 
+using namespace std;
+
 class TreeObject: public WorldObject
 {
+private:
+	bool isEatable;
+	int hungerValue;
+
 public:
 	TreeObject(Ogre::SceneNode* node, float collision_radius);
-	bool receiveAction(ActionType action_type, double action_var);
+	vector<Action> receiveAction(Action action);
+	void setEatable(bool eatable, int hunger_restored = 0);
 };
 
 #endif

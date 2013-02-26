@@ -72,17 +72,54 @@ private:
     uint16_t m_tThreshold;
 };
 
-/*void MapManager::smoothTerrain(void) {
-	PolyVox::Vector3DInt32 bot_left = mapData->getEnclosingRegion().getLowerCorner();
-	PolyVox::Vector3DInt32 top_right = mapData->getEnclosingRegion().getUpperCorner();
+void MapManager::smoothTerrain(PolyVox::Region area) {
+	//cout << "Beginning map smoothing...\n";
+	PolyVox::Vector3DInt32 bot_left = area.getLowerCorner();
+	PolyVox::Vector3DInt32 top_right = area.getUpperCorner();
+	int kernel_size = 1;
 
+	int range = top_right.getX() - bot_left.getX();
 	for (int x = bot_left.getX(); x < top_right.getX(); ++x) {
+		int progress = range / (x - bot_left.getX() + 1);
+		//if (progress % 5 == 1) {
+			//cout << ". ";
+		//}
 		for (int y = bot_left.getY(); y < top_right.getY(); ++y) {
 			for (int z = bot_left.getZ(); z < top_right.getZ(); ++z) {
+				int count = 0;
+				int total = 0;
+				MaterialDensityPair88 voxel_val = getVoxelAt(x,y,z);
+				if (voxel_val.getMaterial() != 0) {
+					bool highest = true;
+					for (int check_y = y+1; check_y < (y+kernel_size+1); ++check_y) {
+						if (getVoxelAt(x, check_y, z).getMaterial() != 0) {
+							highest = false;
+						}
+					}
+					if (highest) {
+						for (int sub_x = x - kernel_size; sub_x < (x + kernel_size + 1); ++sub_x) {
+							for (int sub_y = y - kernel_size; sub_y < (y + kernel_size + 1); ++sub_y) {
+								for (int sub_z = z - kernel_size; sub_z < (z + kernel_size + 1); ++sub_z) {
+									total += getVoxelAt(sub_x, sub_y, sub_z).getDensity();
+									++count;
+								}
+							}
+						}
+						if (total/count < 10) {
+							voxel_val.setDensity(0);
+							voxel_val.setMaterial(0);
+						} else {
+							voxel_val.setDensity(total/count);
+						}
+						mapData->setVoxelAt(x,y,z,voxel_val);
+					}
+				}
 			}
 		}
 	}
-}*/
+	//cout << endl;
+	//cout << "Map smoothing complete.\n";
+}
 
 MapManager::MapManager(void) {
 	maxDrawDist = 100;
@@ -104,6 +141,18 @@ MapManager::MapManager(void) {
 	//LowPassFilter< LargeVolume<MaterialDensityPair88>, LargeVolume<MaterialDensityPair88>, MaterialDensityPair88 > pass1(mapData, mapData->getEnclosingRegion(), mapData, mapData->getEnclosingRegion(), 3);
 	//pass1.execute();
 	cout << "Finished map creation.\n";
+	PolyVox::Vector3DInt32 lower(-100,-30,-100);
+	PolyVox::Vector3DInt32 upper(100,30,100);
+	smoothTerrain(Region(lower,upper));
+	smoothTerrain(Region(lower,upper));
+	smoothTerrain(Region(lower,upper));
+	smoothTerrain(Region(lower,upper));
+	smoothTerrain(Region(lower,upper));
+	smoothTerrain(Region(lower,upper));
+	smoothTerrain(Region(lower,upper));
+	smoothTerrain(Region(lower,upper));
+	smoothTerrain(Region(lower,upper));
+	smoothTerrain(Region(lower,upper));
 	lastPlayerChunk = Vector3DInt32(-999,-999,-999);
 }
 
@@ -206,7 +255,20 @@ void MapManager::drawChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z, Og
 			//tex_y += 64;
 			//cout << "Tex x: " << tex_x << " Tex y: " << tex_y << endl;
 			if ((vert_count%3) == 0) {
-				last_mat = vecVertices[vecIndices[index]].getMaterial();
+				/*int this_mat = vecVertices[vecIndices[index]].getMaterial();
+				int next_mat = vecVertices[vecIndices[index+1]].getMaterial();
+
+				//if the first two vertices of a triangle have the same material, set the texture to be that mat
+				if (this_mat == next_mat) {
+					last_mat = this_mat;
+				} else if (next_mat == vecVertices[vecIndices[index+2]].getMaterial()) {
+					//if the last two vertices have the same mat, set the texture to that one
+					last_mat = next_mat;
+				} else {
+					//else, just use the first one
+					last_mat = this_mat;
+				}*/
+				last_mat = min(vecVertices[vecIndices[index]].getMaterial(),min(vecVertices[vecIndices[index+1]].getMaterial(),vecVertices[vecIndices[index+2]].getMaterial()));
 			}
 			if (last_mat == 254) {
 				//cout << "CHANGING TEX\n";
@@ -234,9 +296,8 @@ void MapManager::drawChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z, Og
 	cout << "map chunk drawing finished\n";
 }
 
-void MapManager::draw(int32_t player_x, int32_t player_y, int32_t player_z, Ogre::SceneManager* mSceneMgr, bool force_redraw) {
+Region MapManager::draw(int32_t player_x, int32_t player_y, int32_t player_z, Ogre::SceneManager* mSceneMgr, bool force_redraw) {
 	static bool hasBeenDrawn = false;
-
 	cout << "Starting to draw map chunks...\n";
 
 	//calculate the new central chunk and region
@@ -245,7 +306,6 @@ void MapManager::draw(int32_t player_x, int32_t player_y, int32_t player_z, Ogre
 
 	//if we've moved we need to draw the new close chunks
 	if (force_redraw || (new_center != lastPlayerChunk)) {
-		//waaerawerawre
 		Region old_region(lastPlayerChunk - Vector3DInt32(32,32,32), lastPlayerChunk + Vector3DInt32(63,63,63));
 
 		//hacky way to make it draw everything the first time around
@@ -390,6 +450,10 @@ void MapManager::draw(int32_t player_x, int32_t player_y, int32_t player_z, Ogre
 	}
 
 	cout << "Finished drawing all map chunks\n";
+	
+	//adjust the upper corner to account for the chunk size
+	//render_region.setUpperCorner(render_region.getUpperCorner() + Vector3DInt32(32,32,32));
+	return render_region;
 }
 
 
@@ -406,8 +470,8 @@ double MapManager::getAveragedHeightAt(double x, double y, double z) {
 	float remainder_z = z - primary_z;
 	int32_t secondary_x = x + (1.0 - remainder_x);
 	int32_t secondary_z = z + (1.0 - remainder_z);
-	int32_t primary_height = getHeightAt(primary_x, y, primary_z);
-	int32_t secondary_height = getHeightAt(secondary_x, y, secondary_z);
+	double primary_height = getHeightAt(primary_x, y, primary_z);
+	double secondary_height = getHeightAt(secondary_x, y, secondary_z);
 	//if the two points are far apart, don't interpolate the values, just get the higher of the two. For example, if you're walking on a narrow bridge above a chasm,
 	//you don't want it to interpolate values on the edge of the bridge, since that would give you a point halfway to the bottom of the chasm.
 	if (abs(secondary_height-primary_height) > 1) {
@@ -417,7 +481,7 @@ double MapManager::getAveragedHeightAt(double x, double y, double z) {
 	}
 }
 
-int32_t MapManager::getHeightAt(int32_t x, int32_t y, int32_t z, int32_t column_size) {
+double MapManager::getHeightAt(int32_t x, int32_t y, int32_t z, int32_t column_size) {
 	//cout << "Checking height (" << x << ", " << y << ", " << z << ")\n";
 	Vector3DInt32 point(x, y, z);
 	if (!mapData->getEnclosingRegion().containsPoint(point)) {
@@ -434,7 +498,7 @@ int32_t MapManager::getHeightAt(int32_t x, int32_t y, int32_t z, int32_t column_
 				MaterialDensityPair88 voxel_val = getVoxelAt(check_x, check_y, check_z);
 				if (voxel_val.getMaterial() != 0) {
 					//cout << "Result: " << check_y << endl;
-					return (check_y - ((255 - voxel_val.getDensity())/255.0));
+					return ((double)check_y - ((255 - voxel_val.getDensity())/255.0));
 				}
 			}
 		}
@@ -452,7 +516,7 @@ bool MapManager::setMaterialAt(int32_t x, int32_t y, int32_t z, uint8_t value, b
 	}*/
 	MaterialDensityPair88 voxel_val = getVoxelAt(x,y,z);
 
-	if (voxel_val.getMaterial() != value) {
+	if ((voxel_val.getMaterial() != value) || (voxel_val.getDensity() < 254)) {
 		if ((y > maxHeight) && (value > 0)) {
 			//cout << "New max height: " << y << " from setting point (" << x << ", " << y << ", " << z << ") to " << (unsigned int)value << ".\n";
 			maxHeight = y;
@@ -485,7 +549,7 @@ bool MapManager::setMaterialAt(int32_t x, int32_t y, int32_t z, uint8_t value, b
 			voxel_val.setDensity(255);
 			voxel_val.setMaterial(value);
 		} else {
-			if (voxel_val.getDensity() > 1) {
+			if (queue_update && (voxel_val.getDensity() > 2)) {
 				voxel_val.setDensity(voxel_val.getDensity()-1);
 			} else {
 				voxel_val.setMaterial(value);
@@ -499,10 +563,11 @@ bool MapManager::setMaterialAt(int32_t x, int32_t y, int32_t z, uint8_t value, b
 }
 
  MaterialDensityPair88 MapManager::getVoxelAt(int32_t x, int32_t y, int32_t z) {
-	/*if (!mapData->getEnclosingRegion().containsPoint(point)) {
-		cout << "Tried to get point (" << x << ", " << y << ", " << z << ") which is outside the volume.\n";
-		return 0;
-	}*/
+	 PolyVox::Vector3DInt32 point(x,y,z);
+	if (!mapData->getEnclosingRegion().containsPoint(point)) {
+		//cout << "Tried to get point (" << x << ", " << y << ", " << z << ") which is outside the volume.\n";
+		return MaterialDensityPair88(0,0);
+	}
 	return mapData->getVoxelAt(x, y, z);
 }
 

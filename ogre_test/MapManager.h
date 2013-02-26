@@ -22,17 +22,17 @@ private:
 	PolyVox::Vector3DInt32 lastPlayerChunk;
 
 	void drawChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z, Ogre::SceneManager* mSceneMgr, bool remove_old);
-	void smoothTerrain(void);
+	void smoothTerrain(PolyVox::Region area);
 
 public:
 	MapManager(void);
 	~MapManager(void);
 	//the force_redraw parameter makes the function redraw every little chunk, regardless of whether the LOD has changed or if it has been modified. This
 	//is computationally expensive, so use only when strictly necessary.
-	void draw(int32_t player_x, int32_t player_y, int32_t player_z, Ogre::SceneManager* mSceneMgr, bool force_redraw = false);
+	Region draw(int32_t player_x, int32_t player_y, int32_t player_z, Ogre::SceneManager* mSceneMgr, bool force_redraw = false);
 	void setMaxDrawDist(unsigned int dist_from_player);
 	//gets the highest voxel in a column of size column_width, going downwards from the point
-	int32_t getHeightAt(int32_t x, int32_t y, int32_t z, int32_t column_width = 1);
+	double getHeightAt(int32_t x, int32_t y, int32_t z, int32_t column_width = 1);
 	//gets an averaged height for a point, going downwards from (x, y, z)
 	double getAveragedHeightAt(double x, double y, double z);
 	//the queue_update tells the map manager whether or not this should add the affected chunk to the "need to be re-drawn" list. This is not desireable if,

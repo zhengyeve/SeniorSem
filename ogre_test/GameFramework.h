@@ -64,6 +64,11 @@ private:
 	//covers the world in plants
 	void populatePlants(PolyVox::Region region);
 
+	//updates world objects so those outside the region are invisible
+	void updateVisibleObjects(PolyVox::Region region);
+	
+	void handleAction(Action action);
+
 protected:
 	//creates a frame listener base object which runs every time another frame is queued. Later we register the "frameRenderingQueued" function as our listener function
 	//with this base object, and then the base object will call our function whenever a frame is queued for rendering. A frame is a still picture rendered to the screen,

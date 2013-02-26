@@ -1,5 +1,7 @@
 #include "CreatureObject.h"
 
+using namespace std;
+
 CreatureObject::CreatureObject(Ogre::SceneNode* node, float collision_radius) {
 	ourNode = node;
 	collisionRadius = collision_radius;
@@ -10,6 +12,9 @@ CreatureObject::CreatureObject(Ogre::SceneNode* node, float collision_radius) {
 	momentum.x = momentum.y = momentum.z = 0;
 }
 
-bool CreatureObject::receiveAction(ActionType action_type, double action_var) {
-	return true;
+vector<Action> CreatureObject::receiveAction(Action action) {
+	Action return_action(ACTION_REMOVE_SELF, 20);
+	vector<Action> to_return;
+	to_return.push_back(return_action);
+	return to_return;
 }

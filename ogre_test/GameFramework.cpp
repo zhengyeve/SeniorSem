@@ -47,11 +47,22 @@ void GameFramework::destroyScene(void)
 }
 //-------------------------------------------------------------------------------------
 
+void GameFramework::updateVisibleObjects(PolyVox::Region region) {
+	for (unsigned int i = 0; i < worldObjects.size(); ++i) {
+		Ogre::Vector3 obj_pos = worldObjects[i]->ourNode->getPosition();
+		if (region.containsPoint(PolyVox::Vector3DInt32(obj_pos.x, obj_pos.y, obj_pos.z))) {
+			worldObjects[i]->ourNode->setVisible(true);
+		} else {
+			worldObjects[i]->ourNode->setVisible(false);
+		}
+	}
+}
+
 void GameFramework::populatePlants(PolyVox::Region region) {
 	cout << "Populating plants...\n";
 	Ogre::Vector3 new_pos;
 	PlantManager plantManager;
-	int min_plant_spacing = 1;
+	int min_plant_spacing = 2;
 	int min_x = region.getLowerCorner().getX();
 	int max_x = region.getUpperCorner().getX();
 	int min_z = region.getLowerCorner().getZ();
@@ -61,12 +72,18 @@ void GameFramework::populatePlants(PolyVox::Region region) {
 	//goes from -(1/2 map size) to +(1/2 map size), incrementing by the minimum plant spacing each time, which prevents putting like 80 trees within a foot of one another
 	for (int x = min_x; x < max_x; x+=min_plant_spacing) {
 		for (int z = min_z; z < max_z; z+=min_plant_spacing) {
-			double cur_height = mapManager->getHeightAt(x,max_y,z,2);
-			double height_diff = abs(cur_height - mapManager->getHeightAt(x+min_plant_spacing,max_y,z+min_plant_spacing,1))+1;
-			height_diff += abs(cur_height - mapManager->getHeightAt(x-min_plant_spacing,max_y,z+min_plant_spacing,1));
-			height_diff += abs(cur_height - mapManager->getHeightAt(x-min_plant_spacing,max_y,z-min_plant_spacing,1));
-			height_diff += abs(cur_height - mapManager->getHeightAt(x+min_plant_spacing,max_y,z-min_plant_spacing,1));
-			height_diff *= 5;
+			int temp_x = x + rand()%2;
+			int temp_z = z + rand()%2;
+			double cur_height = mapManager->getHeightAt(temp_x,max_y,temp_z);
+			/*double height_diff = abs(cur_height - mapManager->getHeightAt(temp_x+min_plant_spacing,max_y,temp_z+min_plant_spacing))+1;
+			height_diff += abs(cur_height - mapManager->getHeightAt(temp_x-min_plant_spacing,max_y,temp_z+min_plant_spacing));
+			height_diff += abs(cur_height - mapManager->getHeightAt(temp_x-min_plant_spacing,max_y,temp_z-min_plant_spacing));
+			height_diff += abs(cur_height - mapManager->getHeightAt(temp_x+min_plant_spacing,max_y,temp_z-min_plant_spacing));
+			height_diff /= min_plant_spacing;*/
+			double height_diff = abs(cur_height - mapManager->getHeightAt(temp_x+1,max_y,temp_z+1))+1;
+			height_diff += abs(cur_height - mapManager->getHeightAt(temp_x-1,max_y,temp_z+1));
+			height_diff += abs(cur_height - mapManager->getHeightAt(temp_x-1,max_y,temp_z-1));
+			height_diff += abs(cur_height - mapManager->getHeightAt(temp_x+1,max_y,temp_z-1));
 
 			//get what kind of plant we are making here from the plant manager
 			PlantType to_place = plantManager.getFlora(cur_height,1.0/height_diff);
@@ -90,9 +107,9 @@ void GameFramework::populatePlants(PolyVox::Region region) {
 						clear_mat = Ogre::MaterialManager::getSingleton().getByName("Materials/ClearGray");
 						break;
 				};
-				new_pos.x = x;
-				new_pos.z = z;
-				new_pos.y = mapManager->getHeightAt(new_pos.x,max_y,new_pos.z,1)+0.4;
+				new_pos.x = temp_x;
+				new_pos.z = temp_z;
+				new_pos.y = mapManager->getHeightAt(new_pos.x,max_y,new_pos.z,1)+0.45;
 				Ogre::SceneNode *temp_node = mSceneMgr->getRootSceneNode()->createChildSceneNode(new_pos);
 				temp_node->attachObject(tree_entity);
 				//scale the model randomly
@@ -102,9 +119,10 @@ void GameFramework::populatePlants(PolyVox::Region region) {
 				Ogre::Radian rot_angle((Ogre::Real)(rand()%7));
 				temp_node->rotate(Ogre::Vector3(0,1,0),rot_angle);
 				TreeObject* new_obj = new TreeObject(temp_node,0.3);
-				new_obj->clearMat = clear_mat;
-				new_obj->primaryMat = tree_entity->getSubEntity(0)->getMaterial();
 				new_obj->subtype = (int)to_place;
+				if (to_place == PLANT_ROUND_SHROOM) {
+					new_obj->setEatable(true, 10);
+				}
 				worldObjects.push_back(new_obj);
 			}
 		}
@@ -144,7 +162,7 @@ void GameFramework::createScene(void)
 	mapManager = new MapManager();
 	mapManager->draw(0,0,0,mSceneMgr,true);
 
-	//populatePlants(PolyVox::Region(-150,-150,-150,150,150,150));
+	populatePlants(PolyVox::Region(-150,-150,-150,150,150,150));
 
 	Ogre::Entity* ninjaEntity = mSceneMgr->createEntity("Ninja", "ninja.mesh");
 	Ogre::SceneNode *node = mSceneMgr->getRootSceneNode()->createChildSceneNode("PlayerNode");
@@ -258,6 +276,38 @@ void GameFramework::removeWorldObject(int index) {
 	delete(temp);
 }
 
+void GameFramework::handleAction(Action action) {
+	cout << "Performing action " << action.getName() << ".\n";
+	Ogre::Vector3 selector_pos = (playerObject->ourNode->getOrientation()*(playerObject->ourNode->getChild("SelectorNode")->getPosition()*playerObject->ourNode->getScale()))+playerObject->ourNode->getPosition();
+	if (action.actionType == ACTION_CHOP) {
+		//check for collisions with that new point, and if something was hit we apply an action to it
+		int coll_index = checkForCollision(&selector_pos);
+		if (coll_index != -1) {
+			//apply the action
+			vector<Action> result_actions = worldObjects[coll_index]->receiveAction(action);
+			for (unsigned int i = 0; i < result_actions.size(); ++i) {
+				if (result_actions[i].actionType == ACTION_REMOVE_SELF) {
+					removeWorldObject(coll_index);
+					totalScore += result_actions[i].actionVar;
+					cout << "You've successfully killed a tree! Your current score is: "<<totalScore<<endl<<endl;
+				} else if (result_actions[i].actionType == ACTION_FEED) {
+					playerObject->hunger += result_actions[i].actionVar;
+				}
+			}
+		} else {
+			cout << "Nothing within action range.\n"; //debug statement
+		}
+	} else if (action.actionType == ACTION_MODIFY_VOXELS) {
+		double offset = 0;// 0.5;
+		//setVoxelAt() returns true if a change was made (i.e. setting a previously empty space to solid), so if it returns true we want to ask the map to redraw itself.
+		if (mapManager->setMaterialAt(selector_pos.x+offset, selector_pos.y+0.2+offset, selector_pos.z+offset, action.actionVar)) {
+			//tell the map manager to redraw at the current position
+			Region render_area = mapManager->draw(playerObject->ourNode->getPosition().x, playerObject->ourNode->getPosition().y, playerObject->ourNode->getPosition().z, mSceneMgr);
+			updateVisibleObjects(render_area);
+		}
+	}
+}
+
 bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 {
 	static bool last_left_mouse = false;     // If the left mouse button is depressed
@@ -265,60 +315,59 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 	static bool affixCamera = true;
     static Ogre::Real mRotate = 0.13;   // The rotate constant
 	static Ogre::Real mMove = playerObject->speed;      // The movement constant
+	static bool has_jumped = false;
+	static Action primary_action(ACTION_CHOP, 5);
+	static Action secondary_action(ACTION_MODIFY_VOXELS, 254);
 	
 	bool cur_left_mouse = mMouse->getMouseState().buttonDown(OIS::MB_Left);
 	bool cur_right_mouse = mMouse->getMouseState().buttonDown(OIS::MB_Right);
 
 	//if the mouse is pressed (currMouse) and wasn't pressed last frame, then they clicked
 	if (cur_left_mouse) {
-		/*//check for collisions with that new point, and if something was hit we apply an action to it
-		int coll_index = checkForCollision(&ninja_pos);
-		if (coll_index != -1) {
-			cout << "Performed action on " << coll_index << endl; //debug statement
-			//apply the action. ACTION_CHOP is the only one so far, so use it
-			if (worldObjects[coll_index]->receiveAction(ACTION_CHOP,5)) {
-				if (worldObjects[coll_index]->objectType == OBJECT_PLANT && worldObjects[coll_index]->subtype == (int)PLANT_ROUND_SHROOM) {
-					playerObject->hunger += 10;
-				}
-				//an object returns true when it wants to be destroyed
-				removeWorldObject(coll_index);
-				totalScore += 5;
-				cout << "You've successfully killed a tree! Your current score is: "<<totalScore<<endl<<endl;
-			}
-		} else {
-			cout << "Nothing within action range.\n"; //debug statement
-		}*/
-		Ogre::Vector3 selector_pos = (playerObject->ourNode->getOrientation()*(playerObject->ourNode->getChild("SelectorNode")->getPosition()*playerObject->ourNode->getScale()))+playerObject->ourNode->getPosition();
-		
-		double offset = 0;// 0.5;
-		//setVoxelAt() returns true if a change was made (i.e. setting a previously empty space to solid), so if it returns true we want to ask the map to redraw itself.
-		if (mapManager->setMaterialAt(selector_pos.x+offset, selector_pos.y+0.2+offset, selector_pos.z+offset, 0)) {
-			//tell the map manager to redraw at the current position
-			mapManager->draw(playerObject->ourNode->getPosition().x, playerObject->ourNode->getPosition().y, playerObject->ourNode->getPosition().z, mSceneMgr);
-		}
+		handleAction(primary_action);
 	}
 	//record the mouse state for the next frame's use
 	last_left_mouse = cur_left_mouse;
 
 	if (cur_right_mouse) {
-		Ogre::Vector3 selector_pos = (playerObject->ourNode->getOrientation()*(playerObject->ourNode->getChild("SelectorNode")->getPosition()*playerObject->ourNode->getScale()))+playerObject->ourNode->getPosition();
-		double offset = 0;// 0.5;
-		//set the voxel to solid where the action is. The setVoxelAt(...) function returns true if a change was made.
-		if (mapManager->setMaterialAt(selector_pos.x+offset, selector_pos.y+0.2+offset, selector_pos.z+offset, 254)) {
-			//tell the map manager to redraw at the current position
-			mapManager->draw(playerObject->ourNode->getPosition().x, playerObject->ourNode->getPosition().y, playerObject->ourNode->getPosition().z, mSceneMgr);
-		}
+		handleAction(secondary_action);
 	}
 	last_right_mouse = cur_right_mouse;
 
-	//use key 1 and 2 to toggle fixed camera on and off
-	if (mKeyboard->isKeyDown(OIS::KC_1))
-	{
+	//use the num keys to switch between actions
+	if (mKeyboard->isKeyDown(OIS::KC_1)) {
+		if ((mKeyboard->isKeyDown(OIS::KC_LSHIFT)) || (mKeyboard->isKeyDown(OIS::KC_RSHIFT))) {
+			secondary_action.actionType = ACTION_CHOP;
+			primary_action.actionVar = 5;
+		} else {
+			primary_action.actionType = ACTION_CHOP;
+			primary_action.actionVar = 5;
+		}
+	} else if (mKeyboard->isKeyDown(OIS::KC_2)) {
+		if ((mKeyboard->isKeyDown(OIS::KC_LSHIFT)) || (mKeyboard->isKeyDown(OIS::KC_RSHIFT))) {
+			secondary_action.actionType = ACTION_MODIFY_VOXELS;
+			secondary_action.actionVar = 0;
+		} else {
+			primary_action.actionType = ACTION_MODIFY_VOXELS;
+			primary_action.actionVar = 0;
+		}
+	} else if (mKeyboard->isKeyDown(OIS::KC_3)) {
+		if ((mKeyboard->isKeyDown(OIS::KC_LSHIFT)) || (mKeyboard->isKeyDown(OIS::KC_RSHIFT))) {
+			secondary_action.actionType = ACTION_MODIFY_VOXELS;
+			secondary_action.actionVar = 254;
+		} else {
+			primary_action.actionType = ACTION_MODIFY_VOXELS;
+			primary_action.actionVar = 254;
+		}
+	}
+
+	//use key C and c to toggle fixed camera on and off
+	if (mKeyboard->isKeyDown(OIS::KC_C) && ((mKeyboard->isKeyDown(OIS::KC_LSHIFT) || (mKeyboard->isKeyDown(OIS::KC_RSHIFT))))) {
 		affixCamera = true;
-	} else if(mKeyboard->isKeyDown(OIS::KC_2))
-	{
+	} else if (mKeyboard->isKeyDown(OIS::KC_C)) {
 		affixCamera = false;
 	}
+
 	//use x and z to lower and raise the selector
 	if (mKeyboard->isKeyDown(OIS::KC_Z)) {
 		Ogre::Vector3 temp_vector = Ogre::Vector3::ZERO;
@@ -385,10 +434,18 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 			playerObject->momentum.x = 0;
 		}
 	}
-	float jump_speed = 1.5;
-	if (mKeyboard->isKeyDown(OIS::KC_SPACE) && (playerObject->momentum.y < jump_speed)) // Space bar (jump)
+	float jump_speed = 7.5;
+	if (mKeyboard->isKeyDown(OIS::KC_SPACE)) // Space bar (jump)
 	{
-		playerObject->momentum.y += acceleration;
+		if ((playerObject->momentum.y < jump_speed) && (playerObject->momentum.y > -rest_threshold) && !has_jumped) {
+			playerObject->momentum.y += 5*acceleration;
+		} else if (playerObject->momentum.y >= jump_speed) {
+			has_jumped = true;
+		}
+	}
+
+	if (mKeyboard->isKeyDown(OIS::KC_0)) {
+		cout << "Player pos: " << playerObject->ourNode->getPosition() << " player momentum: " << playerObject->momentum << endl;
 	}
 
 	if ((abs(playerObject->momentum.x) > rest_threshold) || (abs(playerObject->momentum.y) > rest_threshold) || (abs(playerObject->momentum.z) > rest_threshold)) {
@@ -396,7 +453,7 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 		playerObject->ourNode->translate(playerObject->momentum * evt.timeSinceLastFrame, Ogre::Node::TS_LOCAL);
 		//set the new position's height to be the height of the terrain at that location (so it doesn't fly when it walks off a cliff)
 		Ogre::Vector3 player_pos = playerObject->ourNode->getPosition();
-		float player_height = playerObject->ourNode->getScale().y * 80; //* 170;
+		float player_height = playerObject->ourNode->getScale().y * 80;
 		//player_pos.y = mapManager->getHeightAt(player_pos.x,player_pos.y+1,player_pos.z)+player_height;
 
 		//if the new position isn't colliding with an object, make that our position and update the camera. Otherwise, move back to where we were.
@@ -418,12 +475,18 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 				playerObject->momentum.y = 0;
 				playerObject->momentum.z = 0;
 			} else if ((height_diff < hop_threshold) && (height_diff > -hop_threshold)) {
-				playerObject->momentum.y = 0;
+				if ((playerObject->momentum.y > 0) && !(mKeyboard->isKeyDown(OIS::KC_SPACE))) {
+					playerObject->momentum.y = 0;
+					has_jumped = false;
+				} else if (playerObject->momentum.y < 0) {
+					playerObject->momentum.y = 0;
+					has_jumped = false;
+				}
 				Ogre::Vector3 temp_vec(0,height_diff/100,0);
 				playerObject->ourNode->translate(temp_vec);
 				//cout << "Levelling\n";
 			} else {
-				if ((-playerObject->momentum.y < max_speed) && (!mKeyboard->isKeyDown(OIS::KC_SPACE))) {
+				if ((-playerObject->momentum.y < max_speed*10) && ((!mKeyboard->isKeyDown(OIS::KC_SPACE) || has_jumped))) {
 					playerObject->momentum.y -= acceleration;
 				}
 			}
@@ -440,23 +503,7 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 			}
 		} else {
 			playerObject->ourNode->translate(-playerObject->momentum * evt.timeSinceLastFrame, Ogre::Node::TS_LOCAL);
-		}
-
-		//Check to see if each object is closer to the camera than the player's character, and if so change the material to something transparent
-		for (int i = 0; i < worldObjects.size(); ++i) {
-			Ogre::Entity* temp = static_cast<Ogre::Entity*>(worldObjects[i]->ourNode->getAttachedObject(0));
-			double camToObj = mCamera->getPosition().squaredDistance(worldObjects[i]->ourNode->getPosition());
-			//if distance from ninja to camera is greater than the distance from camera to object...
-			if (affixCamera && playerObject->ourNode->getPosition().squaredDistance(mCamera->getPosition()) > camToObj) {
-				//if it's not already transparent, make it so
-				if (!worldObjects[i]->isClear) {
-					temp->setMaterial(worldObjects[i]->clearMat);
-					worldObjects[i]->isClear = true;
-				}
-			} else if (worldObjects[i]->isClear) {
-				temp->setMaterial(worldObjects[i]->primaryMat);
-				worldObjects[i]->isClear = false;
-			}
+			playerObject->momentum = Ogre::Vector3(0,0,0);
 		}
 	}
 
