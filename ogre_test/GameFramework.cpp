@@ -17,7 +17,7 @@ This source file is part of the
 
 #include "GameFramework.h"
 #include <OgreMath.h>
-#include "TreeObject.h"
+#include "PlantObject.h"
 #include "CreatureObject.h"
 #include "PlantManager.h"
 #include "glew/glew.h"
@@ -118,7 +118,7 @@ void GameFramework::populatePlants(PolyVox::Region region) {
 				//give the tree a random rotation about the y-axis, so the trees aren't all aligned on a grid
 				Ogre::Radian rot_angle((Ogre::Real)(rand()%7));
 				temp_node->rotate(Ogre::Vector3(0,1,0),rot_angle);
-				TreeObject* new_obj = new TreeObject(temp_node,0.3);
+				PlantObject* new_obj = new PlantObject(temp_node,0.3);
 				new_obj->subtype = (int)to_place;
 				if (to_place == PLANT_ROUND_SHROOM) {
 					new_obj->setEatable(true, 10);
@@ -162,7 +162,7 @@ void GameFramework::createScene(void)
 	mapManager = new MapManager();
 	mapManager->draw(0,0,0,mSceneMgr,true);
 
-	populatePlants(PolyVox::Region(-150,-150,-150,150,150,150));
+	populatePlants(PolyVox::Region(-200,-200,-200,200,200,200));
 
 	Ogre::Entity* ninjaEntity = mSceneMgr->createEntity("Ninja", "ninja.mesh");
 	Ogre::SceneNode *node = mSceneMgr->getRootSceneNode()->createChildSceneNode("PlayerNode");
@@ -268,31 +268,35 @@ int GameFramework::checkForCollision(Ogre::Vector3* to_check) {
 	return -1;
 }
 
-void GameFramework::removeWorldObject(int index) {
+void GameFramework::removeWorldObject(int index, bool do_delete) {
 	WorldObject* temp = worldObjects[index];
 	worldObjects[index] = worldObjects[worldObjects.size()-1];
 	worldObjects.pop_back();
-	temp->ourNode->detachAllObjects();
-	delete(temp);
+	if (do_delete) {
+		temp->ourNode->detachAllObjects();
+		delete(temp);
+	} else {
+		temp->ourNode->setVisible(false);
+	}
 }
 
-void GameFramework::handleAction(Action action) {
+void GameFramework::handleAction(Action action, WorldObject* target, WorldObject* actor) {
 	cout << "Performing action " << action.getName() << ".\n";
 	Ogre::Vector3 selector_pos = (playerObject->ourNode->getOrientation()*(playerObject->ourNode->getChild("SelectorNode")->getPosition()*playerObject->ourNode->getScale()))+playerObject->ourNode->getPosition();
 	if (action.actionType == ACTION_CHOP) {
-		//check for collisions with that new point, and if something was hit we apply an action to it
-		int coll_index = checkForCollision(&selector_pos);
-		if (coll_index != -1) {
+		//WorldObject* actual_target;
+		if (target->isNone()) {
+			//check for collisions with that new point, and if something was hit we apply an action to it
+			int coll_index = checkForCollision(&selector_pos);
+			if (coll_index != -1) {
+				target = worldObjects[coll_index];
+			}
+		}
+		if (!target->isNone()) {
 			//apply the action
-			vector<Action> result_actions = worldObjects[coll_index]->receiveAction(action);
+			vector<Action> result_actions = target->receiveAction(action);
 			for (unsigned int i = 0; i < result_actions.size(); ++i) {
-				if (result_actions[i].actionType == ACTION_REMOVE_SELF) {
-					removeWorldObject(coll_index);
-					totalScore += result_actions[i].actionVar;
-					cout << "You've successfully killed a tree! Your current score is: "<<totalScore<<endl<<endl;
-				} else if (result_actions[i].actionType == ACTION_FEED) {
-					playerObject->hunger += result_actions[i].actionVar;
-				}
+				handleAction(result_actions[i],actor,target);
 			}
 		} else {
 			cout << "Nothing within action range.\n"; //debug statement
@@ -305,6 +309,40 @@ void GameFramework::handleAction(Action action) {
 			Region render_area = mapManager->draw(playerObject->ourNode->getPosition().x, playerObject->ourNode->getPosition().y, playerObject->ourNode->getPosition().z, mSceneMgr);
 			updateVisibleObjects(render_area);
 		}
+	} else if (action.actionType == ACTION_DROP_SELF) {
+		if (target->objectType == OBJECT_CREATURE) {
+			CreatureObject* receiver_creature = (CreatureObject*) target;
+			if (receiver_creature->obtainObject(actor)) {
+				bool foundit = false;
+				for (unsigned int i = 0; i < worldObjects.size(); ++i) {
+					if (worldObjects[i] == actor) {
+						removeWorldObject(i, false);
+						foundit = true;
+						break;
+					}
+				}
+				if (!foundit) {
+					cout << "Remove self from drop failed!\n";
+				}
+			}
+		}		
+	} else if (action.actionType == ACTION_REMOVE_SELF) {
+		bool foundit = false;
+		for (unsigned int i = 0; i < worldObjects.size(); ++i) {
+			if (worldObjects[i] == actor) {
+				removeWorldObject(i);
+				foundit = true;
+				break;
+			}
+		}
+		if (!foundit) {
+			cout << "Remove self failed!\n";
+		}
+	} else if (action.actionType == ACTION_FEED) {
+		CreatureObject* target_creature = (CreatureObject*) target;
+		target_creature->hunger += action.actionVar;
+	} else {
+		cout << "Unhandled action attempted!\n";
 	}
 }
 
@@ -324,13 +362,15 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 
 	//if the mouse is pressed (currMouse) and wasn't pressed last frame, then they clicked
 	if (cur_left_mouse) {
-		handleAction(primary_action);
+		WorldObject temp;
+		handleAction(primary_action, &temp, playerObject);
 	}
 	//record the mouse state for the next frame's use
 	last_left_mouse = cur_left_mouse;
 
 	if (cur_right_mouse) {
-		handleAction(secondary_action);
+		WorldObject temp;
+		handleAction(secondary_action, &temp, playerObject);
 	}
 	last_right_mouse = cur_right_mouse;
 
@@ -445,7 +485,9 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 	}
 
 	if (mKeyboard->isKeyDown(OIS::KC_0)) {
-		cout << "Player pos: " << playerObject->ourNode->getPosition() << " player momentum: " << playerObject->momentum << endl;
+		cout << "Player pos: " << playerObject->ourNode->getPosition() << " player momentum: " << playerObject->momentum << " player inventory: ";
+		playerObject->listInventory();
+		cout << endl;
 	}
 
 	if ((abs(playerObject->momentum.x) > rest_threshold) || (abs(playerObject->momentum.y) > rest_threshold) || (abs(playerObject->momentum.z) > rest_threshold)) {

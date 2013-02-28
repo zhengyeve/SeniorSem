@@ -2,8 +2,7 @@
 #define __PLANTMANAGER_H__
 
 #include <vector>
-
-enum PlantType{PLANT_NONE, PLANT_OAK, PLANT_PINE, PLANT_ROUND_SHROOM};
+#include "PlantObject.h"
 
 struct PlantProfile {
 	PlantType plantType;

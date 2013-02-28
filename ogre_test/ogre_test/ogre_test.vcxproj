@@ -17,7 +17,7 @@
     <ClCompile Include="..\MapChunk.cpp" />
     <ClCompile Include="..\MapManager.cpp" />
     <ClCompile Include="..\PlantManager.cpp" />
-    <ClCompile Include="..\TreeObject.cpp" />
+    <ClCompile Include="..\PlantObject.cpp" />
     <ClCompile Include="..\WorldObject.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -27,7 +27,7 @@
     <ClInclude Include="..\MapChunk.h" />
     <ClInclude Include="..\MapManager.h" />
     <ClInclude Include="..\PlantManager.h" />
-    <ClInclude Include="..\TreeObject.h" />
+    <ClInclude Include="..\PlantObject.h" />
     <ClInclude Include="..\WorldObject.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

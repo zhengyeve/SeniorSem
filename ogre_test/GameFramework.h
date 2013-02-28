@@ -59,7 +59,7 @@ private:
 	int checkForCollision(Ogre::Vector3* to_check);
 
 	//deletes an object in the world
-	void removeWorldObject(int index);
+	void removeWorldObject(int index, bool do_delete=true);
 
 	//covers the world in plants
 	void populatePlants(PolyVox::Region region);
@@ -67,7 +67,7 @@ private:
 	//updates world objects so those outside the region are invisible
 	void updateVisibleObjects(PolyVox::Region region);
 	
-	void handleAction(Action action);
+	void handleAction(Action action, WorldObject* target, WorldObject* actor);
 
 protected:
 	//creates a frame listener base object which runs every time another frame is queued. Later we register the "frameRenderingQueued" function as our listener function
