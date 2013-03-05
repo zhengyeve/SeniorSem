@@ -21,6 +21,13 @@ This source file is part of the
 #include "CreatureObject.h"
 #include "WorldObject.h"
 #include <vector>
+<<<<<<< HEAD
+
+
+=======
+#include "MapChunk.h"
+#include "MapManager.h"
+>>>>>>> origin/Matt's-Branch
  
 using namespace std;
 
@@ -32,14 +39,6 @@ public:
     
 private:
 	//DATA MEMBERS
-	//stores global variables for rendering the terrain, like how detailed it should be, etc.
-    Ogre::TerrainGlobalOptions* mTerrainGlobals;
-
-	//stores the terrain pieces themselves
-    Ogre::TerrainGroup* mTerrainGroup;
-
-	//whether the terrain has been sucessfully imported
-    bool mTerrainsImported;
 
 	//text labels for displaying player conditions
 	OgreBites::Label* scoreLabel;
@@ -54,18 +53,10 @@ private:
 	//the player's object
 	CreatureObject* playerObject;
 
+	//what contains the voxel map
+	MapManager* mapManager;
+
 	//FUNCTIONS
-	//checks to see if the the terrain files have been generated or not, and loads them in if they have. If they haven't, it takes a while to generate them.
-	//for this reason, the game will take a while to start up the first time you run it on a particular map, but subsequent loads will be much faster.
-    void defineTerrain(long x, long y);
-
-	//blends different terrain textures together based on terrain height (rocky up high, more dirt down low, etc) and saves that blend map for quick
-	//future use, so Ogre doesn't have to blend the textures every time it wants to render the terrain.
-    void initBlendMaps(Ogre::Terrain* terrain);
-
-	//configures default terrain options for us. Some of the defaults we override later, but it's good to have a base.
-    void configureTerrainDefaults(Ogre::Light* light);
-
 	//handles all input, like key presses or mouse clicks
 	bool processUnbufferedInput(const Ogre::FrameEvent& evt);
 
@@ -73,10 +64,19 @@ private:
 	int checkForCollision(Ogre::Vector3* to_check);
 
 	//deletes an object in the world
-	void removeWorldObject(int index);
+	void removeWorldObject(int index, bool do_delete=true);
 
 	//covers the world in plants
-	void populatePlants(void);
+	void populatePlants(PolyVox::Region region);
+
+	//updates world objects so those outside the region are invisible
+	void updateVisibleObjects(PolyVox::Region region);
+	
+	void handleAction(Action action, WorldObject* target, WorldObject* actor);
+
+	// GUI initialization
+	
+//	void initializeGUI();
 
 protected:
 	//creates a frame listener base object which runs every time another frame is queued. Later we register the "frameRenderingQueued" function as our listener function
@@ -95,5 +95,6 @@ protected:
 
 	//our frame listener function we use for updating code stuff many times a second.
     virtual bool frameRenderingQueued(const Ogre::FrameEvent& evt);
+
 };
 

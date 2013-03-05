@@ -35,6 +35,11 @@ This source file is part of the
 #include <SdkTrays.h>
 #include <SdkCameraMan.h>
 
+#include "MyGUI.h"
+#include "MyGUI_OgrePlatform.h"
+
+
+
 class BaseApplication : public Ogre::FrameListener, public Ogre::WindowEventListener, public OIS::KeyListener, public OIS::MouseListener, OgreBites::SdkTrayListener
 {
 public:
@@ -42,6 +47,10 @@ public:
     virtual ~BaseApplication(void);
 
     virtual void go(void);
+
+
+	
+	void mousePressedExit(MyGUI::Widget* _widget);
 
 protected:
     virtual bool setup();
@@ -91,6 +100,10 @@ protected:
     OIS::InputManager* mInputManager;
     OIS::Mouse*    mMouse;
     OIS::Keyboard* mKeyboard;
+
+	//GUI
+	MyGUI::Gui* mGUI;
+
 };
 
 #endif // #ifndef __BaseApplication_h_

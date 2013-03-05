@@ -1,13 +1,29 @@
 
 #include <OgreEntity.h>
-
+#include <string>
 
 #ifndef __WORLDOBJECT_H__
 #define __WORLDOBJECT_H__
 
-//in the future this will have all the different types of actions
-enum ActionType{ACTION_CHOP};
-enum ObjectType{OBJECT_PLANT, OBJECT_CREATURE};
+using namespace std;
+
+enum ObjectType{OBJECT_NONE, OBJECT_PLANT, OBJECT_CREATURE};
+enum ActionType{ACTION_NONE, ACTION_CHOP, ACTION_REMOVE_SELF, ACTION_FEED, ACTION_MODIFY_VOXELS, ACTION_DROP_OBJECT, ACTION_DROP_SELF};
+static string ActionNames[6] = {"No Action", "Chop", "Self Destruct", "Feed", "Change Terrain", "Drop Object"};
+
+class Action {
+public:
+	ActionType actionType;
+	double actionVar, actionVar2;
+	Action(ActionType type, double action_val=0, double action_val2=0) { 
+		actionType = type;
+		actionVar = action_val;
+		actionVar2 = action_val2;
+	}
+	string getName() {
+		return ActionNames[actionType];
+	}
+};
 
 class WorldObject
 {
@@ -15,14 +31,15 @@ public:
 	float collisionRadius;
 	Ogre::SceneNode* ourNode;
 	bool isClear;
-	Ogre::ResourcePtr primaryMat, clearMat;
 	ObjectType objectType;
 	int subtype;
+	unsigned int numObjects;
 
-	//how we tell an object an action is being done to it. The "action_type" is the name of the type of action, like say ACTION_CHOP
-	//and the action_var is used for passing various data. For ACTION_CHOP, for example, it would be how much damage the chop does.
-	//returns whether or not the game framework is to destroy the object after returning.
-	virtual bool receiveAction(ActionType action_type, double action_var)=0;
+	WorldObject(void);
+	virtual vector<Action> receiveAction(Action action);
+	virtual bool operator==(const WorldObject& other);
+	virtual string getName();
+	bool isNone(void);
 };
 
 #endif

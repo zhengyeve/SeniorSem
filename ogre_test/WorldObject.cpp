@@ -1,14 +1,21 @@
 #include "WorldObject.h"
 
-/*WorldObject::WorldObject(Ogre::SceneNode* node, float collision_radius) {
-	ourNode = node;
-	collisionRadius = collision_radius;
+WorldObject::WorldObject(void) {
+	objectType = OBJECT_NONE;
 }
 
-WorldObject::WorldObject() {
-	isClear = false;
+vector<Action> WorldObject::receiveAction(Action action) {
+	vector<Action> to_return;
+	return to_return;
+}
+bool WorldObject::operator==(const WorldObject& other) {
+	return (other.objectType == OBJECT_NONE);
 }
 
-bool WorldObject::receiveAction(ActionType action_type, double action_var) {
-	return true;
-}*/
+string WorldObject::getName(void) {
+	return "Empty Object";
+}
+
+bool WorldObject::isNone(void) {
+	return (objectType == OBJECT_NONE);
+}

@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<MyGUI type="Layout" version="3.2.0">
+    <Widget type="Window" skin="WindowCS" position="305 210 400 300" align="Center" layer="Popup" name="Result_Window">
+        <Property key="Caption" value="RESULT"/>
+        <Property key="Movable" value="false"/>
+        <Widget type="TextBox" skin="TextBox" position="72 74 245 115" align="Center">
+            <Property key="Colour" value="0.235772 0.450292 0.194863"/>
+        </Widget>
+        <Widget type="Button" skin="Button" position="280 210 75 30">
+            <Property key="Colour" value="0.631579 0.0221607 0.0221607"/>
+            <Property key="Enabled" value="true"/>
+            <Property key="NeedMouse" value="true"/>
+            <Property key="StateSelected" value="false"/>
+            <Property key="Caption" value="EXIT"/>
+            <Property key="TextAlign" value="Center"/>
+            <Property key="TextShadowColour" value="0.321637 0.0131665 0.0131665"/>
+            <Property key="TextShadow" value="true"/>
+            <Property key="TextColour" value="1 1 1"/>
+            <Property key="FontName" value="DejaVuSansFont.15"/>
+        </Widget>
+    </Widget>
+    <Widget type="Widget" skin="PanelSkin" position="400 4 230 100" name="Score_Panel">
+        <Widget type="TextBox" skin="TextBox" position="20 10 190 30">
+            <Property key="Caption" value="CURRENT SCORE"/>
+            <Property key="TextAlign" value="Center"/>
+            <Property key="FontHeight" value="20"/>
+        </Widget>
+        <Widget type="EditBox" skin="EditBoxEmpty" position="20 50 190 30">
+            <Property key="TextAlign" value="Center"/>
+        </Widget>
+    </Widget>
+    <Widget type="Widget" skin="PanelSkin" position="0 0 260 110" name="Help_Panel">
+        <Widget type="TextBox" skin="TextBox" position="5 5 250 100" name="Help_Text">
+            <Property key="TextAlign" value="Left VCenter"/>
+            <Property key="Caption" value="NOTE\n- \n- \n- F1 to toggle this help on or off"/>
+        </Widget>
+    </Widget>
+    <Widget type="Widget" skin="PanelSkin" position="690 620 230 100" name="Hunger_Panel">
+        <Widget type="TextBox" skin="TextBox" position="20 10 190 30">
+            <Property key="Caption" value="HUNER LEFT"/>
+            <Property key="TextAlign" value="Center"/>
+            <Property key="FontHeight" value="20"/>
+        </Widget>
+        <Widget type="EditBox" skin="EditBoxEmpty" position="20 50 190 30">
+            <Property key="TextAlign" value="Center"/>
+        </Widget>
+    </Widget>
+    <CodeGeneratorSettings/>
+</MyGUI>

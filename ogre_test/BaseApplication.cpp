@@ -32,7 +32,8 @@ BaseApplication::BaseApplication(void)
     mShutDown(false),
     mInputManager(0),
     mMouse(0),
-    mKeyboard(0)
+    mKeyboard(0),
+	mGUI(nullptr)
 {
 }
 
@@ -58,7 +59,7 @@ bool BaseApplication::configure(void)
     {
         // If returned true, user clicked OK so initialise
         // Here we choose to let the system create a default rendering window by passing 'true'
-        mWindow = mRoot->initialise(true, "TutorialApplication Render Window");
+        mWindow = mRoot->initialise(true, "Lumberjacking");
 
         return true;
     }
@@ -114,9 +115,9 @@ void BaseApplication::createFrameListener(void)
     Ogre::WindowEventUtilities::addWindowEventListener(mWindow, this);
 
     mTrayMgr = new OgreBites::SdkTrayManager("InterfaceName", mWindow, mMouse, this);
-    mTrayMgr->showFrameStats(OgreBites::TL_BOTTOMLEFT);
+    //mTrayMgr->showFrameStats(OgreBites::TL_BOTTOMLEFT);
     //mTrayMgr->showLogo(OgreBites::TL_BOTTOMRIGHT);
-    mTrayMgr->hideCursor();
+    //mTrayMgr->hideCursor();
 
     // create a params panel for displaying sample details
     Ogre::StringVector items;
@@ -136,6 +137,26 @@ void BaseApplication::createFrameListener(void)
     mDetailsPanel->setParamValue(9, "Bilinear");
     mDetailsPanel->setParamValue(10, "Solid");
     mDetailsPanel->hide();
+
+
+	// GUI configuration
+	MyGUI::OgrePlatform* mPlatform = new MyGUI::OgrePlatform();
+	mPlatform->initialise(mWindow, mSceneMgr); // mWindow is Ogre::RenderWindow*, mSceneManager is Ogre::SceneManager*
+	mGUI = new MyGUI::Gui();
+	mGUI->initialise();
+	MyGUI::ResourceManager::getInstance().load("Resources.xml");
+	MyGUI::LayoutManager::getInstance().loadLayout("Basic.layout");
+//	MyGUI::ControllerManager::getInstance().initialise();
+
+	
+
+	//const MyGUI::VectorWidgetPtr& root = MyGUI::LayoutManager::getInstance().loadLayout("Basic.layout");
+//	mGUI->findWidget<MyGUI::EditBox>("Help_Text")->castType<MyGUI::TextBox>()->setCaption("NOTE\n\n- Press IJKLUO to move the ninja\n- Press 1 to stop the camera and stick to the ninja\n- WASD + mouse to explore independently\n- F1 to switch this note on/off");
+
+	mGUI->findWidget<MyGUI::Widget>("Help_Panel")->setVisible(true);
+	mGUI->findWidget<MyGUI::Widget>("Hunger_Panel")->setVisible(true);
+	mGUI->findWidget<MyGUI::Widget>("Score_Panel")->setVisible(true);
+	mGUI->findWidget<MyGUI::Window>("Result_Window")->setVisible(false);
 
     mRoot->addFrameListener(this);
 }
@@ -252,9 +273,11 @@ bool BaseApplication::frameRenderingQueued(const Ogre::FrameEvent& evt)
 
     mTrayMgr->frameRenderingQueued(evt);
 
-    if (!mTrayMgr->isDialogVisible())
+    if (!(mTrayMgr->isDialogVisible() && mGUI->findWidget<MyGUI::Window>("Result_Window")->getVisible()))
     {
-        mCameraMan->frameRenderingQueued(evt);   // if dialog isn't up, then update the camera
+
+		
+			mCameraMan->frameRenderingQueued(evt);   // if dialog isn't up, then update the camera
         if (mDetailsPanel->isVisible())   // if details panel is visible, then update its contents
         {
             mDetailsPanel->setParamValue(0, Ogre::StringConverter::toString(mCamera->getDerivedPosition().x));
@@ -359,6 +382,18 @@ bool BaseApplication::keyPressed( const OIS::KeyEvent &arg )
     {
         mShutDown = true;
     }
+	else if (arg.key == OIS::KC_F1)
+	{
+		MyGUI::WidgetPtr helpptr = mGUI->findWidget<MyGUI::Widget>("Help_Panel");
+		if (helpptr->getVisible()) {
+			helpptr->setVisible(false);
+		}
+		else
+		{
+			helpptr->setVisible(true);
+		}
+
+	}
 
     mCameraMan->injectKeyDown(arg);
     return true;

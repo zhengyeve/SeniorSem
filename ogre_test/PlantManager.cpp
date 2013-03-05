@@ -10,33 +10,33 @@ PlantManager::PlantManager(void) {
 	PlantProfile oak;
 	oak.plantType = PLANT_OAK;
 	oak.frequency = 100;
-	oak.idealHeight = 45;
-	oak.rangeHeight = 40;
+	oak.idealHeight = 30;
+	oak.rangeHeight = 50;
 	oak.weightHeight = 1.0;
-	oak.idealFlatness = 0.2;
-	oak.rangeFlatness = 0.1;
-	oak.weightFlatness = 0.7;
+	oak.idealFlatness = 0.85;
+	oak.rangeFlatness = 0.50;
+	oak.weightFlatness = 0.4;
 	plants.push_back(oak);
 
 	PlantProfile pine;
 	pine.plantType = PLANT_PINE;
 	pine.frequency = 75;
-	pine.idealHeight = 95;
+	pine.idealHeight = 55;
 	pine.rangeHeight = 50;
 	pine.weightHeight = 1.0;
-	pine.idealFlatness = 0.18;
-	pine.rangeFlatness = 0.15;
-	pine.weightFlatness = 0.5;
+	pine.idealFlatness = 0.70;
+	pine.rangeFlatness = 0.35;
+	pine.weightFlatness = 0.6;
 	plants.push_back(pine);
 
 	PlantProfile round_shroom;
 	round_shroom.plantType = PLANT_ROUND_SHROOM;
-	round_shroom.frequency = 150;
-	round_shroom.idealHeight = 45;
-	round_shroom.rangeHeight = 45;
+	round_shroom.frequency = 120;
+	round_shroom.idealHeight = 35;
+	round_shroom.rangeHeight = 75;
 	round_shroom.weightHeight = 0.1;
-	round_shroom.idealFlatness = 0.23;
-	round_shroom.rangeFlatness = 0.06;
+	round_shroom.idealFlatness = 0.95;
+	round_shroom.rangeFlatness = 0.20;
 	round_shroom.weightFlatness = 3.0;
 	plants.push_back(round_shroom);
 }
@@ -52,8 +52,12 @@ PlantType PlantManager::getFlora(double height, float terrain_flatness) {
 		std::cout << "Number evaluated: " << num_evaluated << "\n";
 	}*/
 
+	/*if (rand() % 2 == 0) {
+		return PLANT_NONE;
+	}*/
+
 	PlantType winner = PLANT_NONE;
-	float highest_score = 20; //increase number to decrease the chance plants will spawn / decrease the overall number of plants
+	float highest_score = 45; //increase number to decrease the chance plants will spawn / decrease the overall number of plants
 
 	for (unsigned int i = 0; i < plants.size(); ++i) {
 		//subtracts the difference between the height and the ideal height from the range, and divides it by the range.
