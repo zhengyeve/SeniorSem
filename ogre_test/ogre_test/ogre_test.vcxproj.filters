@@ -30,15 +30,15 @@
     <ClCompile Include="..\CreatureObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-<<<<<<< HEAD
     <ClCompile Include="..\BaseManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\PointerManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\InputManager.cpp">
-=======
+    <ClCompile Include="..\InputManager.cpp">	
+      <Filter>Source Files</Filter>
+	</ClCompile>
     <ClCompile Include="..\MapChunk.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -46,7 +46,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\PlantObject.cpp">
->>>>>>> origin/Matt's-Branch
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -66,15 +65,15 @@
     <ClInclude Include="..\CreatureObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-<<<<<<< HEAD
     <ClInclude Include="..\BaseManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PointerManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\InputManager.h">
-=======
+    <ClInclude Include="..\InputManager.h">	
+      <Filter>Header Files</Filter>
+	</ClInclude>
     <ClInclude Include="..\MapChunk.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -82,7 +81,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PlantObject.h">
->>>>>>> origin/Matt's-Branch
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
