@@ -34,11 +34,13 @@ void PlantObject::setEatable(bool eatable, int hunger_restored) {
 
 bool PlantObject::operator==(const WorldObject& other) {
 	if (other.objectType != objectType) {
+		cout << "Object type " << other.objectType << " does not equal " << objectType << "!\n";
 		return false;
 	} else {
 		const PlantObject& other_plant = (const PlantObject&) other;
 
 		if ((objectType == other_plant.subtype) && (isEatable == other_plant.isEatable) && (foodValue == other_plant.foodValue)) {
+			cout << "Object type " << other.objectType << " does equal " << objectType << "!\n";
 			return true;
 		} else {
 			return false;

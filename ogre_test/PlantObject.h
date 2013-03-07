@@ -18,7 +18,7 @@ public:
 	PlantObject(Ogre::SceneNode* node, float collision_radius);
 	vector<Action> receiveAction(Action action);
 	void setEatable(bool eatable, int hunger_restored = 0);
-	bool operator==(const WorldObject& other);
+	virtual bool operator==(const WorldObject& other);
 	string getName() {return PlantNames[subtype];}
 };
 

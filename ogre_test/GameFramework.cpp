@@ -302,9 +302,18 @@ void GameFramework::handleAction(Action action, WorldObject* target, WorldObject
 			cout << "Nothing within action range.\n"; //debug statement
 		}
 	} else if (action.actionType == ACTION_MODIFY_VOXELS) {
-		double offset = 0;// 0.5;
+		Ogre::Vector3 voxel_offset(0,0,0);
+		if (selector_pos.x > 0) {
+			voxel_offset.x += 0.5;
+		}
+		if (selector_pos.y > 0) {
+			voxel_offset.y += 0.5;
+		}
+		if (selector_pos.z > 0) {
+			voxel_offset.z += 0.5;
+		}
 		//setVoxelAt() returns true if a change was made (i.e. setting a previously empty space to solid), so if it returns true we want to ask the map to redraw itself.
-		if (mapManager->setMaterialAt(selector_pos.x+offset, selector_pos.y+0.2+offset, selector_pos.z+offset, action.actionVar)) {
+		if (mapManager->setMaterialAt(selector_pos.x+voxel_offset.x, selector_pos.y+voxel_offset.y, selector_pos.z+voxel_offset.z, action.actionVar)) {
 			//tell the map manager to redraw at the current position
 			Region render_area = mapManager->draw(playerObject->ourNode->getPosition().x, playerObject->ourNode->getPosition().y, playerObject->ourNode->getPosition().z, mSceneMgr);
 			updateVisibleObjects(render_area);

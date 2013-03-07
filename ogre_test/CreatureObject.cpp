@@ -41,11 +41,13 @@ int CreatureObject::obtainObject(WorldObject* to_add) {
 			if (inventory[i] == to_add) {
 				inventory[i]->numObjects++;
 				foundit = true;
+				cout << "FOUNDIT AHOIUGAIUSGDLKGIUGSIDUGASOIUDGOIUGAIOUSGIUAGSDIUAGIUSGDoiAShd\n";
 				return 2;
 			}
 		}
 		if (!foundit) {
 			inventory.push_back(to_add);
+			cout << "Adding new object to inventory.\n";
 			return 1;
 		}
 	}
