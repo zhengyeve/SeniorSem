@@ -20,7 +20,7 @@ This source file is part of the
 #include "PlantObject.h"
 #include "CreatureObject.h"
 #include "PlantManager.h"
-#include "glew/glew.h"
+//#include "glew/glew.h"
 
 static unsigned long totalScore = 0;
 
@@ -313,7 +313,7 @@ void GameFramework::handleAction(Action action, WorldObject* target, WorldObject
 			voxel_offset.z += 0.5;
 		}
 		//setVoxelAt() returns true if a change was made (i.e. setting a previously empty space to solid), so if it returns true we want to ask the map to redraw itself.
-		if (mapManager->setMaterialAt(selector_pos.x+voxel_offset.x, selector_pos.y+voxel_offset.y, selector_pos.z+voxel_offset.z, action.actionVar)) {
+		if (mapManager->setVoxelAt(selector_pos.x+voxel_offset.x, selector_pos.y+voxel_offset.y, selector_pos.z+voxel_offset.z, action.actionVar, action.actionVar2)) {
 			//tell the map manager to redraw at the current position
 			Region render_area = mapManager->draw(playerObject->ourNode->getPosition().x, playerObject->ourNode->getPosition().y, playerObject->ourNode->getPosition().z, mSceneMgr);
 			updateVisibleObjects(render_area);
@@ -364,22 +364,24 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 	static Ogre::Real mMove = playerObject->speed;      // The movement constant
 	static bool has_jumped = false;
 	static Action primary_action(ACTION_CHOP, 5);
-	static Action secondary_action(ACTION_MODIFY_VOXELS, 254);
+	static Action secondary_action(ACTION_MODIFY_VOXELS, 254, 10);
 	
 	bool cur_left_mouse = mMouse->getMouseState().buttonDown(OIS::MB_Left);
 	bool cur_right_mouse = mMouse->getMouseState().buttonDown(OIS::MB_Right);
 
 	//if the mouse is pressed (currMouse) and wasn't pressed last frame, then they clicked
-	if (cur_left_mouse) {
-		WorldObject temp;
-		handleAction(primary_action, &temp, playerObject);
+	if (cur_left_mouse && !last_left_mouse) {
+		PlantObject temp_obj(playerObject->ourNode,0);
+		temp_obj.objectType = OBJECT_NONE;
+		handleAction(primary_action, &temp_obj, playerObject);
 	}
 	//record the mouse state for the next frame's use
 	last_left_mouse = cur_left_mouse;
 
-	if (cur_right_mouse) {
-		WorldObject temp;
-		handleAction(secondary_action, &temp, playerObject);
+	if (cur_right_mouse && !last_right_mouse) {
+		PlantObject temp_obj(playerObject->ourNode,0);
+		temp_obj.objectType = OBJECT_NONE;
+		handleAction(secondary_action, &temp_obj, playerObject);
 	}
 	last_right_mouse = cur_right_mouse;
 
@@ -392,21 +394,25 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 			primary_action.actionType = ACTION_CHOP;
 			primary_action.actionVar = 5;
 		}
-	} else if (mKeyboard->isKeyDown(OIS::KC_2)) {
+	} else if (mKeyboard->isKeyDown(OIS::KC_2)) { //remove voxels
 		if ((mKeyboard->isKeyDown(OIS::KC_LSHIFT)) || (mKeyboard->isKeyDown(OIS::KC_RSHIFT))) {
 			secondary_action.actionType = ACTION_MODIFY_VOXELS;
-			secondary_action.actionVar = 0;
+			secondary_action.actionVar = 0; //the material (air)
+			secondary_action.actionVar2 = 5; //the amount we want to change by
 		} else {
 			primary_action.actionType = ACTION_MODIFY_VOXELS;
-			primary_action.actionVar = 0;
+			primary_action.actionVar = 0; //the material (air)
+			primary_action.actionVar2 = 5; //the amount we want to change by
 		}
-	} else if (mKeyboard->isKeyDown(OIS::KC_3)) {
+	} else if (mKeyboard->isKeyDown(OIS::KC_3)) { //add voxels
 		if ((mKeyboard->isKeyDown(OIS::KC_LSHIFT)) || (mKeyboard->isKeyDown(OIS::KC_RSHIFT))) {
 			secondary_action.actionType = ACTION_MODIFY_VOXELS;
-			secondary_action.actionVar = 254;
+			secondary_action.actionVar = 254; //the material (stone?)
+			secondary_action.actionVar2 = 10; //the amount we want to change by
 		} else {
 			primary_action.actionType = ACTION_MODIFY_VOXELS;
-			primary_action.actionVar = 254;
+			primary_action.actionVar = 254; //the material (stone?)
+			primary_action.actionVar2 = 10; //the amount we want to change by
 		}
 	}
 
@@ -494,7 +500,7 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 	}
 
 	if (mKeyboard->isKeyDown(OIS::KC_0)) {
-		cout << "Player pos: " << playerObject->ourNode->getPosition() << " player momentum: " << playerObject->momentum << " player inventory: ";
+		cout << "Player pos:\t" << playerObject->ourNode->getPosition() << "\nPlayer momentum:\t" << playerObject->momentum << "\nPlayer inventory:\n";
 		playerObject->listInventory();
 		cout << endl;
 	}

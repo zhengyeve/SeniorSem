@@ -37,7 +37,7 @@ public:
 
 	WorldObject(void);
 	virtual vector<Action> receiveAction(Action action);
-	virtual bool operator==(const WorldObject& other);
+	virtual bool operator==(const WorldObject& other)=0;
 	virtual string getName();
 	bool isNone(void);
 };

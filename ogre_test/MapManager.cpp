@@ -130,9 +130,9 @@ MapManager::MapManager(void) {
 		for (int y = -200; y < 200; ++y) {
 			for (int z = -200; z < 200; ++z) {
 				if ((y+sin((double)z*0.05)*10) < 30) {
-					setMaterialAt(x,y,z,255,false);
+					setVoxelAt(x,y,z,255,255,false);
 				} else {
-					setMaterialAt(x,y,z,0,false);
+					setVoxelAt(x,y,z,0,0,false);
 				}
 				//cout << "Map data at : " << mapData->getVoxelAt(x,y,z) << endl;
 			}
@@ -508,7 +508,7 @@ double MapManager::getHeightAt(int32_t x, int32_t y, int32_t z, int32_t column_s
 	return -999;
 }
 
-bool MapManager::setMaterialAt(int32_t x, int32_t y, int32_t z, uint8_t value, bool queue_update) {
+bool MapManager::setVoxelAt(int32_t x, int32_t y, int32_t z, uint8_t material, uint8_t density_change, bool queue_update) {
 	/*Vector3DInt32 point(x, y, z);
 	if (!mapData->getEnclosingRegion().containsPoint(point)) {
 		cout << "Tried to set point (" << x << ", " << y << ", " << z << ") which is outside the volume.\n";
@@ -516,11 +516,14 @@ bool MapManager::setMaterialAt(int32_t x, int32_t y, int32_t z, uint8_t value, b
 	}*/
 	MaterialDensityPair88 voxel_val = getVoxelAt(x,y,z);
 
-	if ((voxel_val.getMaterial() != value) || (voxel_val.getDensity() < 254)) {
-		if ((y > maxHeight) && (value > 0)) {
-			//cout << "New max height: " << y << " from setting point (" << x << ", " << y << ", " << z << ") to " << (unsigned int)value << ".\n";
+	if ((voxel_val.getMaterial() != material) || (voxel_val.getDensity() < 254)) {
+		//record the highest voxel for posterity. In the future we can check for height starting at the highest known point and moving downwards.
+		if ((y > maxHeight) && (material > 0)) {
+			//cout << "New max height: " << y << " from setting point (" << x << ", " << y << ", " << z << ") to " << (unsigned int)material << ".\n";
 			maxHeight = y;
 		}
+
+		//if we want to re-render changed chunks (queue_update == true), then add the affected chunk to the changed list so we know to redraw it next update
 		if (queue_update) {
 			for (int32_t chunk_x = x - 1; chunk_x < x + 2; ++chunk_x) {
 				for (int32_t chunk_y = y - 1; chunk_y < y + 2; ++chunk_y) {
@@ -545,16 +548,35 @@ bool MapManager::setMaterialAt(int32_t x, int32_t y, int32_t z, uint8_t value, b
 			}
 		}
 		
-		if (value > 0) {
-			voxel_val.setDensity(255);
-			voxel_val.setMaterial(value);
-		} else {
-			if (queue_update && (voxel_val.getDensity() > 2)) {
-				voxel_val.setDensity(voxel_val.getDensity()-1);
-			} else {
-				voxel_val.setMaterial(value);
-				voxel_val.setDensity(0);
+		if (queue_update) { //if (queue_update == true), then we're doing a normal change and need to use this logic to determine the resulting value
+			if (material > 0) {
+				//the density we want to set the voxel to. Currently, if the voxel material is different from what we're trying to set, we don't add any density
+				int target_density = voxel_val.getDensity();
+				//if the material IS what we're trying to set, increase the density by the amount specified
+				if (voxel_val.getMaterial() == material) {
+					target_density += density_change;
+					//make sure the resulting value is within bounds
+					if (target_density > 255) {
+						target_density = 255;
+					}
+				}
+				voxel_val.setDensity(target_density);
+				voxel_val.setMaterial(material);
+			} else //if the specified material was 0 (air), then reduce the voxel's density instead
+			{
+				//if the voxel's density is big enough, decrease the voxel's density by the specified amount
+				if (voxel_val.getDensity() > (1+density_change)) {
+					voxel_val.setDensity(voxel_val.getDensity()-density_change);
+				} else //otherwise, go ahead and set the material to 0 (air) and set the density to zero.
+				{
+					voxel_val.setMaterial(material);
+					voxel_val.setDensity(0);
+				}
 			}
+		} else //if (queue_update == false), then we're short-circuiting this logic and just setting the value
+		{
+			voxel_val.setDensity(density_change);
+			voxel_val.setMaterial(material);
 		}
 		mapData->setVoxelAt(x, y, z, voxel_val);
 		return true;

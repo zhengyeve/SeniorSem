@@ -8,9 +8,9 @@ vector<Action> WorldObject::receiveAction(Action action) {
 	vector<Action> to_return;
 	return to_return;
 }
-bool WorldObject::operator==(const WorldObject& other) {
+/*bool WorldObject::operator==(const WorldObject& other) {
 	return (other.objectType == OBJECT_NONE);
-}
+}*/
 
 string WorldObject::getName(void) {
 	return "Empty Object";

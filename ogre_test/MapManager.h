@@ -38,7 +38,7 @@ public:
 	//the queue_update tells the map manager whether or not this should add the affected chunk to the "need to be re-drawn" list. This is not desireable if,
 	//for example, you're setting a very large number of blocks in a chunk that's going to be updated anyway (ex; world-gen). If you want to force a global redraw,
 	//use the draw() function with force_redraw = true. Returns whether an update happened.
-	bool setMaterialAt(int32_t x, int32_t y, int32_t z, uint8_t value, bool queue_update = true);
+	bool setVoxelAt(int32_t x, int32_t y, int32_t z, uint8_t material, uint8_t density_change, bool queue_update = true);
 	MaterialDensityPair88 getVoxelAt(int32_t x, int32_t y, int32_t z);
 	uint32_t getMaxHeight(void);
 };

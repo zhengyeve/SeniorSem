@@ -39,10 +39,12 @@ bool PlantObject::operator==(const WorldObject& other) {
 	} else {
 		const PlantObject& other_plant = (const PlantObject&) other;
 
-		if ((objectType == other_plant.subtype) && (isEatable == other_plant.isEatable) && (foodValue == other_plant.foodValue)) {
+		if ((subtype == other_plant.subtype) && (isEatable == other_plant.isEatable) && (foodValue == other_plant.foodValue)) {
 			cout << "Object type " << other.objectType << " does equal " << objectType << "!\n";
 			return true;
 		} else {
+			//cout << "Object type " << other.objectType << " does not equal " << objectType << "!\n";
+			//cout << "or... other.objectType << " does equal " << objectType << "!\n";
 			return false;
 		}
 	}

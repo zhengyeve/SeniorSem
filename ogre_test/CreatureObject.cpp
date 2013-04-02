@@ -38,7 +38,7 @@ int CreatureObject::obtainObject(WorldObject* to_add) {
 	} else {
 		bool foundit = false;
 		for (unsigned int i = 0; i < inventory.size(); ++i) {
-			if (inventory[i] == to_add) {
+			if (*inventory[i] == *to_add) {
 				inventory[i]->numObjects++;
 				foundit = true;
 				cout << "FOUNDIT AHOIUGAIUSGDLKGIUGSIDUGASOIUDGOIUGAIOUSGIUAGSDIUAGIUSGDoiAShd\n";
@@ -55,6 +55,6 @@ int CreatureObject::obtainObject(WorldObject* to_add) {
 
 void CreatureObject::listInventory(void) {
 	for (unsigned int i = 0; i < inventory.size(); ++i) {
-		cout << inventory[i]->getName() << endl;
+		cout << inventory[i]->getName() << "\t" << inventory[i]->numObjects << endl;
 	}
 }
