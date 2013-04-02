@@ -146,14 +146,12 @@ void BaseApplication::createFrameListener(void)
 	mGUI->initialise();
 	MyGUI::ResourceManager::getInstance().load("Resources.xml");
 	MyGUI::LayoutManager::getInstance().loadLayout("Basic.layout");
-//	MyGUI::ControllerManager::getInstance().initialise();
 
-	
+	mGUI->findWidget<MyGUI::Widget>("Help_Panel")->setVisible(false);
+	mGUI->findWidget<MyGUI::Widget>("Help_Icon")->setVisible(true);
+	mGUI->findWidget<MyGUI::Widget>("Inventory_Panel")->setVisible(false);
+	mGUI->findWidget<MyGUI::Widget>("Inventory_Icon")->setVisible(true);
 
-	//const MyGUI::VectorWidgetPtr& root = MyGUI::LayoutManager::getInstance().loadLayout("Basic.layout");
-//	mGUI->findWidget<MyGUI::EditBox>("Help_Text")->castType<MyGUI::TextBox>()->setCaption("NOTE\n\n- Press IJKLUO to move the ninja\n- Press 1 to stop the camera and stick to the ninja\n- WASD + mouse to explore independently\n- F1 to switch this note on/off");
-
-	mGUI->findWidget<MyGUI::Widget>("Help_Panel")->setVisible(true);
 	mGUI->findWidget<MyGUI::Widget>("Hunger_Panel")->setVisible(true);
 	mGUI->findWidget<MyGUI::Widget>("Score_Panel")->setVisible(true);
 	mGUI->findWidget<MyGUI::Window>("Result_Window")->setVisible(false);
@@ -384,13 +382,31 @@ bool BaseApplication::keyPressed( const OIS::KeyEvent &arg )
     }
 	else if (arg.key == OIS::KC_F1)
 	{
-		MyGUI::WidgetPtr helpptr = mGUI->findWidget<MyGUI::Widget>("Help_Panel");
-		if (helpptr->getVisible()) {
-			helpptr->setVisible(false);
+		MyGUI::WidgetPtr wptr = mGUI->findWidget<MyGUI::Widget>("Help_Panel");
+		MyGUI::WidgetPtr iptr = mGUI->findWidget<MyGUI::Widget>("Help_Icon");
+		if (wptr->getVisible()) {
+			wptr->setVisible(false);
+			iptr->setVisible(true);
 		}
 		else
 		{
-			helpptr->setVisible(true);
+			wptr->setVisible(true);
+			iptr->setVisible(false);
+		}
+
+	}
+	else if (arg.key == OIS::KC_F2)
+	{
+		MyGUI::WidgetPtr wptr = mGUI->findWidget<MyGUI::Widget>("Inventory_Panel");
+		MyGUI::WidgetPtr iptr = mGUI->findWidget<MyGUI::Widget>("Inventory_Icon");
+		if (wptr->getVisible()) {
+			wptr->setVisible(false);
+			iptr->setVisible(true);
+		}
+		else
+		{
+			wptr->setVisible(true);
+			iptr->setVisible(false);
 		}
 
 	}

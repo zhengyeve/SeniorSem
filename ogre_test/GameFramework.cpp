@@ -20,12 +20,9 @@ This source file is part of the
 #include "PlantObject.h"
 #include "CreatureObject.h"
 #include "PlantManager.h"
-<<<<<<< HEAD
 //#include "ToolTip.h"
-=======
-#include "glew/glew.h"
->>>>>>> origin/Matt's-Branch
 
+//#include "glew/glew.h"
 
 //#include "MyGUI.h"
 //#include "MyGUI_OgrePlatform.h"
@@ -152,6 +149,7 @@ void BaseApplication::mousePressedExit(MyGUI::Widget* _widget)	// EXIT button
 
 
 
+
 void GameFramework::createScene(void)
 { 
 	//create a console so we can print debug statements
@@ -181,41 +179,53 @@ void GameFramework::createScene(void)
     light->setSpecularColour(Ogre::ColourValue(0.4, 0.4, 0.4));
  
     mSceneMgr->setAmbientLight(Ogre::ColourValue(0.2, 0.2, 0.2));
-<<<<<<< HEAD
- 
-    mTerrainGlobals = OGRE_NEW Ogre::TerrainGlobalOptions();
-    mTerrainGroup = OGRE_NEW Ogre::TerrainGroup(mSceneMgr, Ogre::Terrain::ALIGN_X_Z, 257, 3000.0f);
-    mTerrainGroup->setFilenameConvention(Ogre::String("TestTerrain1"), Ogre::String("dat"));
-    mTerrainGroup->setOrigin(Ogre::Vector3::ZERO);
- 
-    configureTerrainDefaults(light);
- 
-    for (long x = 0; x <= 0; ++x)
-        for (long y = 0; y <= 0; ++y)
-            defineTerrain(x, y);
 
 
- 
-    // sync load since we want everything in place when we start
-    mTerrainGroup->loadAllTerrains(true);
-	 
-    if (mTerrainsImported)
-    {
-        Ogre::TerrainGroup::TerrainIterator ti = mTerrainGroup->getTerrainIterator();
-        while(ti.hasMoreElements())
-        {
-            Ogre::Terrain* t = ti.getNext()->instance;
-            initBlendMaps(t);
-        }
-    }
-=======
-	//mSceneMgr->setAmbientLight(Ogre::ColourValue(1, 1, 1));
->>>>>>> origin/Matt's-Branch
+ ////
+ ////   mTerrainGlobals = OGRE_NEW Ogre::TerrainGlobalOptions();
+ ////   mTerrainGroup = OGRE_NEW Ogre::TerrainGroup(mSceneMgr, Ogre::Terrain::ALIGN_X_Z, 257, 3000.0f);
+ ////   mTerrainGroup->setFilenameConvention(Ogre::String("TestTerrain1"), Ogre::String("dat"));
+ ////   mTerrainGroup->setOrigin(Ogre::Vector3::ZERO);
+ ////
+ ////   configureTerrainDefaults(light);
+ ////
+ ////   for (long x = 0; x <= 0; ++x)
+ ////       for (long y = 0; y <= 0; ++y)
+ ////           defineTerrain(x, y);
+
+
+ ////
+ ////   // sync load since we want everything in place when we start
+ ////   mTerrainGroup->loadAllTerrains(true);
+	//// 
+ ////   if (mTerrainsImported)
+ ////   {
+ ////       Ogre::TerrainGroup::TerrainIterator ti = mTerrainGroup->getTerrainIterator();
+ ////       while(ti.hasMoreElements())
+ ////       {
+ ////           Ogre::Terrain* t = ti.getNext()->instance;
+ ////           initBlendMaps(t);
+ ////       }
+ ////   }
+
+	//////mSceneMgr->setAmbientLight(Ogre::ColourValue(1, 1, 1));
+
 
 	mapManager = new MapManager();
 	mapManager->draw(0,0,0,mSceneMgr,true);
 
 	populatePlants(PolyVox::Region(-200,-200,-200,200,200,200));
+
+
+	// starting of gui configuration
+
+//	initializeGUI();
+	//mGUI->load("Basic.layout");
+	//mGUI->findWidget<MyGUI::Window>("Result")->setVisible(false);
+	//mGUI->findWidget<MyGUI::Widget>("HelpPanel")->setVisible(true);
+
+
+
 
 
 	// starting of gui configuration
@@ -246,11 +256,9 @@ void GameFramework::createScene(void)
 
 	playerObject = new CreatureObject(node, 0.3);
 	playerObject->speed = 400*node->getScale().x;
-<<<<<<< HEAD
+
 	playerObject->hunger = INITIAL_HUNGER;
-=======
-	playerObject->hunger = 100;
->>>>>>> origin/Matt's-Branch
+
 
 	mCamera->setPosition(Ogre::Vector3(0, 50, 50));
 	mCamera->lookAt(node->getPosition());
@@ -350,9 +358,8 @@ bool GameFramework::frameRenderingQueued(const Ogre::FrameEvent& evt)
 
     bool ret = BaseApplication::frameRenderingQueued(evt);
 
-<<<<<<< HEAD
-    if (!mTerrainGroup->isDerivedDataUpdateInProgress())
-    {
+    //if (!mTerrainGroup->isDerivedDataUpdateInProgress())
+    //{
 //        mTrayMgr->removeWidgetFromTray(mInfoLabel);
 //        mInfoLabel->hide();
 
@@ -363,20 +370,6 @@ bool GameFramework::frameRenderingQueued(const Ogre::FrameEvent& evt)
 		str = strstm.str();
 //        scoreLabel->setCaption(str);
 		mGUI->findWidget<MyGUI::EditBox>("Current_Score")->castType<MyGUI::TextBox>()->setCaption(str);
-
-        if (mTerrainsImported)
-        {
-            mTerrainGroup->saveAllTerrains(true);
-            mTerrainsImported = false;
-        }
-    }
-=======
-	string str = "Your current score: ";
-	stringstream strstm;
-	strstm << totalScore;
-	str += strstm.str();
-    scoreLabel->setCaption(str);
->>>>>>> origin/Matt's-Branch
 
     if(!processUnbufferedInput(evt)) return false;
  
@@ -608,17 +601,15 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 		}
 	}
 
+
 	if (mKeyboard->isKeyDown(OIS::KC_0)) {
 		cout << "Player pos: " << playerObject->ourNode->getPosition() << " player momentum: " << playerObject->momentum << " player inventory: ";
 		playerObject->listInventory();
 		cout << endl;
 	}
-<<<<<<< HEAD
-	if (movementChange) {
-=======
 
 	if ((abs(playerObject->momentum.x) > rest_threshold) || (abs(playerObject->momentum.y) > rest_threshold) || (abs(playerObject->momentum.z) > rest_threshold)) {
->>>>>>> origin/Matt's-Branch
+
 		//move the ninja in whatever direction
 		playerObject->ourNode->translate(playerObject->momentum * evt.timeSinceLastFrame, Ogre::Node::TS_LOCAL);
 		//set the new position's height to be the height of the terrain at that location (so it doesn't fly when it walks off a cliff)

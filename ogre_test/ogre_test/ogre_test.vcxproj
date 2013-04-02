@@ -15,17 +15,13 @@
     <ClCompile Include="..\BaseManager.cpp" />
     <ClCompile Include="..\CreatureObject.cpp" />
     <ClCompile Include="..\GameFramework.cpp" />
-
+    <!--     <ClCompile Include="..\PlantManager.cpp" /> -->
     <ClCompile Include="..\InputManager.cpp" />
-    <ClCompile Include="..\PlantManager.cpp" />
     <ClCompile Include="..\PointerManager.cpp" />
-    <ClCompile Include="..\TreeObject.cpp" />
-
     <ClCompile Include="..\MapChunk.cpp" />
     <ClCompile Include="..\MapManager.cpp" />
-    <ClCompile Include="..\PlantManager.cpp" />
     <ClCompile Include="..\PlantObject.cpp" />
-
+    <ClCompile Include="..\PlantManager.cpp" />
     <ClCompile Include="..\WorldObject.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -33,17 +29,13 @@
     <ClInclude Include="..\BaseManager.h" />
     <ClInclude Include="..\CreatureObject.h" />
     <ClInclude Include="..\GameFramework.h" />
-
+    <!--     <ClInclude Include="..\PlantManager.h" /> -->
     <ClInclude Include="..\InputManager.h" />
-    <ClInclude Include="..\PlantManager.h" />
     <ClInclude Include="..\PointerManager.h" />
-    <ClInclude Include="..\TreeObject.h" />
-
     <ClInclude Include="..\MapChunk.h" />
     <ClInclude Include="..\MapManager.h" />
     <ClInclude Include="..\PlantManager.h" />
     <ClInclude Include="..\PlantObject.h" />
-
     <ClInclude Include="..\WorldObject.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -94,7 +86,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(OGRE_HOME)\lib\$(Configuration);$(POLYVOX_HOME)\Debug;$(OGRE_HOME)\boost\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OGRE_HOME)\lib\$(Configuration);$(POLYVOX_HOME)\Release;$(OGRE_HOME)\boost\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>OgreMain_d.lib;OIS_d.lib;OgreTerrain_d.lib;PolyVoxCore.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
@@ -109,26 +101,15 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-
-      <AdditionalIncludeDirectories>$(OGRE_HOME)\include;$(OGRE_HOME)\include\OIS;$(OGRE_HOME)\include\OGRE;$(OGRE_HOME)\Samples\Common\include;$(OGRE_HOME)\boost;%(AdditionalIncludeDirectories);C:\MyGUI\MyGUIEngine\include;C:\MyGUI\Platforms\Ogre\OgrePlatform\include;C:\MyGUI\Common;C:\MyGUI\Common\Base\Ogre; C:\MyGUI\Common\Input\Win32</AdditionalIncludeDirectories>
-
-      <AdditionalIncludeDirectories>$(OGRE_HOME)\include;$(OGRE_HOME)\include\OIS;$(OGRE_HOME)\include\OGRE;$(OGRE_HOME)\Samples\Common\include;$(OGRE_HOME)\boost;$(POLYVOX_HOME)\PolyVoxCore\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-
-      <ForcedIncludeFiles>
-      </ForcedIncludeFiles>
+      <AdditionalIncludeDirectories>$(POLYVOX_HOME)\PolyVoxCore\include\;$(OGRE_HOME)\include;$(OGRE_HOME)\include\OIS;$(OGRE_HOME)\include\OGRE;$(OGRE_HOME)\Samples\Common\include;$(OGRE_HOME)\boost;%(AdditionalIncludeDirectories);C:\MyGUI\MyGUIEngine\include;C:\MyGUI\Platforms\Ogre\OgrePlatform\include;C:\MyGUI\Common;C:\MyGUI\Common\Base\Ogre;C:\MyGUI\Common\Input\Win32</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-
-      <AdditionalLibraryDirectories>$(OGRE_HOME)\lib\$(Configuration);$(OGRE_HOME)\boost\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>OgreMain.lib;OIS.lib;OgreTerrain.lib;%(AdditionalDependencies);MyGUIEngine.lib;MyGUI.OgrePlatform.lib</AdditionalDependencies>
-
-      <AdditionalLibraryDirectories>$(OGRE_HOME)\lib\$(Configuration);$(POLYVOX_HOME)\Release;$(OGRE_HOME)\boost\lib;C:\glew-1.9.0\bin;C:\glew-1.9.0\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>OgreMain.lib;OIS.lib;OgreTerrain.lib;PolyVoxCore.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-
+      <AdditionalLibraryDirectories>$(OGRE_HOME)\lib\$(Configuration);$(POLYVOX_HOME)\Release;$(OGRE_HOME)\boost\lib;C:\MyGUI_3.2.0\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>OgreMain.lib;OIS.lib;OgreTerrain.lib;PolyVoxCore.lib;MyGUIEngine.lib;MyGUI.OgrePlatform.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)\$(TargetFileName)" "$(OGRE_HOME)\Bin\$(Configuration)"</Command>

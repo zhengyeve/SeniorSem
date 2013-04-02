@@ -21,14 +21,12 @@ This source file is part of the
 #include "CreatureObject.h"
 #include "WorldObject.h"
 #include <vector>
-<<<<<<< HEAD
 
 
-=======
+
 #include "MapChunk.h"
 #include "MapManager.h"
->>>>>>> origin/Matt's-Branch
- 
+
 using namespace std;
 
 class GameFramework : public BaseApplication
