@@ -1,0 +1,22 @@
+GUI:
+
+- put files into the corresponding directories
+
+
+
+
+Project Configuration
+- if any linker/include file not found error, check the following settings.
+
+Active(ralease), Active(Win32)
+
+- Configuration Properties
+- - Debugging
+- - - Command: $(OGRE_HOME)\Bin\$(Configuration)\$(ProjectName).exe
+- - - Working Directory: $(OGRE_HOME)\Bin\$(Configuration)
+
+- - C/C++
+- - - Additional Include Directoiries: $(POLYVOX_HOME)\PolyVoxCore\include\;$(OGRE_HOME)\include;$(OGRE_HOME)\include\OIS;$(OGRE_HOME)\include\OGRE;$(OGRE_HOME)\Samples\Common\include;$(OGRE_HOME)\boost;%(AdditionalIncludeDirectories);C:\MyGUI\MyGUIEngine\include;C:\MyGUI\Platforms\Ogre\OgrePlatform\include;C:\MyGUI\Common;C:\MyGUI\Common\Base\Ogre;C:\MyGUI\Common\Input\Win32
+
+- - Linker
+- - - Addtional Library Directory: $(OGRE_HOME)\lib\$(Configuration);$(POLYVOX_HOME)\Release;$(OGRE_HOME)\boost\lib;C:\MyGUI_3.2.0\lib\Release;%(AdditionalLibraryDirectories)
