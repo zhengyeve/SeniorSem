@@ -168,6 +168,7 @@ void GameFramework::createScene(void)
     //Ogre::MaterialManager::getSingleton().setDefaultAnisotropy(7);
 	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("../../myMedia","FileSystem");
 	Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
+	mSceneMgr->setSkyDome(true, "Examples/CloudySky", 5, 8, 2000, false);
  
     Ogre::Vector3 lightdir(0.55, -0.3, 0.75);
     lightdir.normalise();
@@ -271,6 +272,8 @@ void GameFramework::createScene(void)
 		removeWorldObject(collision_index);
 		collision_index = checkForCollision(&temp);
 	}
+
+	//mGUI->findWidget<MyGUI::Widget>("LeftClickAction")->setProperty("ImageTexture","shovel.png");
 }
 //-------------------------------------------------------------------------------------
 void GameFramework::createFrameListener(void)
@@ -496,25 +499,31 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 		if ((mKeyboard->isKeyDown(OIS::KC_LSHIFT)) || (mKeyboard->isKeyDown(OIS::KC_RSHIFT))) {
 			secondary_action.actionType = ACTION_CHOP;
 			primary_action.actionVar = 5;
+			mGUI->findWidget<MyGUI::Widget>("RightClickAction")->setProperty("ImageTexture","axe.png");
 		} else {
 			primary_action.actionType = ACTION_CHOP;
 			primary_action.actionVar = 5;
+			mGUI->findWidget<MyGUI::Widget>("LeftClickAction")->setProperty("ImageTexture","axe.png");
 		}
 	} else if (mKeyboard->isKeyDown(OIS::KC_2)) {
 		if ((mKeyboard->isKeyDown(OIS::KC_LSHIFT)) || (mKeyboard->isKeyDown(OIS::KC_RSHIFT))) {
 			secondary_action.actionType = ACTION_MODIFY_VOXELS;
 			secondary_action.actionVar = 0;
+			mGUI->findWidget<MyGUI::Widget>("RightClickAction")->setProperty("ImageTexture","shovel.png");
 		} else {
 			primary_action.actionType = ACTION_MODIFY_VOXELS;
 			primary_action.actionVar = 0;
+			mGUI->findWidget<MyGUI::Widget>("LeftClickAction")->setProperty("ImageTexture","shovel.png");
 		}
 	} else if (mKeyboard->isKeyDown(OIS::KC_3)) {
 		if ((mKeyboard->isKeyDown(OIS::KC_LSHIFT)) || (mKeyboard->isKeyDown(OIS::KC_RSHIFT))) {
 			secondary_action.actionType = ACTION_MODIFY_VOXELS;
 			secondary_action.actionVar = 254;
+			mGUI->findWidget<MyGUI::Widget>("RightClickAction")->setProperty("ImageTexture","brick.png");
 		} else {
 			primary_action.actionType = ACTION_MODIFY_VOXELS;
 			primary_action.actionVar = 254;
+			mGUI->findWidget<MyGUI::Widget>("LeftClickAction")->setProperty("ImageTexture","brick.png");
 		}
 	}
 
