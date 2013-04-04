@@ -21,12 +21,8 @@ This source file is part of the
 #include "CreatureObject.h"
 #include "WorldObject.h"
 #include <vector>
-
-
-
 #include "MapChunk.h"
 #include "MapManager.h"
-
 using namespace std;
 
 class GameFramework : public BaseApplication

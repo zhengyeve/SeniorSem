@@ -22,7 +22,9 @@ public:
 	double speed;
 	unsigned int maxInventorySize;
 	Ogre::Vector3 momentum;
-	bool operator==(const WorldObject& other);
+	
+	virtual bool operator==(const WorldObject& other);
+
 	//returns 0 if adding the object failed, 1 if we used the object pointer, 2 if we added it to a stack
 	int obtainObject(WorldObject* to_add);
 	string getName() {return CreatureNames[subtype];}
