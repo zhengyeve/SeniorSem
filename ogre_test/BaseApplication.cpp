@@ -411,7 +411,7 @@ bool BaseApplication::keyPressed( const OIS::KeyEvent &arg )
 
 	}
 
-    mCameraMan->injectKeyDown(arg);
+    //mCameraMan->injectKeyDown(arg);
     return true;
 }
 

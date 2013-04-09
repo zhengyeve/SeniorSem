@@ -169,8 +169,8 @@ void GameFramework::createScene(void)
     //Ogre::MaterialManager::getSingleton().setDefaultAnisotropy(7);
 	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("../../myMedia","FileSystem");
 	Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
-	mSceneMgr->setSkyDome(true, "Examples/CloudySky", 5, 8, 2000, false);
- 
+	mSceneMgr->setSkyDome(true, "Examples/CloudySky", 5, 8, 5000, false);
+ //change max draw distanceaasdf
     Ogre::Vector3 lightdir(0.55, -0.3, 0.75);
     lightdir.normalise();
  
@@ -235,12 +235,17 @@ void GameFramework::createScene(void)
 	cout << "Setting player's y to: " << temp_pos.y << " because we checked (" << temp_pos.x << ", " << mapManager->getMaxHeight() << ", " << temp_pos.z << ")\n";
 	node->setPosition(temp_pos);
 	Ogre::SceneNode* selector_node = node->createChildSceneNode("SelectorNode");
+
+	// This translation may seem redundant since we update the selector's position every time the mouse moves, but if we don't do this
+	// then the camera tries to look at the selector which is in the same position as the camera itself, and an acid trip results.
 	Ogre::Vector3 temp_vector = Ogre::Vector3::ZERO;
 	temp_vector.z -= 250;
 	temp_vector.y += 80;
 	selector_node->translate(temp_vector, Ogre::Node::TS_LOCAL);
+
 	selector_node->attachObject(mSceneMgr->createEntity("Selector", "RoundShroom.mesh"));
 	selector_node->scale(10, 10, 10);
+	selector_node->pitch(Ogre::Degree(-20));
 
 	playerObject = new CreatureObject(node, 0.3);
 	playerObject->speed = 400*node->getScale().x;
@@ -250,7 +255,7 @@ void GameFramework::createScene(void)
 	mCamera->setPosition(Ogre::Vector3(0, 50, 50));
 	mCamera->lookAt(node->getPosition());
     mCamera->setNearClipDistance(0.1);
-    mCamera->setFarClipDistance(5000);
+    mCamera->setFarClipDistance(9000);
 
 	Ogre::Vector3 temp = node->getPosition();
 	int collision_index = checkForCollision(&temp);
@@ -259,8 +264,12 @@ void GameFramework::createScene(void)
 		collision_index = checkForCollision(&temp);
 	}
 
-	//mGUI->findWidget<MyGUI::Widget>("LeftClickAction")->setProperty("ImageTexture","shovel.png");
+	Ogre::Vector3 camera_pos = playerObject->ourNode->getPosition();
+	camera_pos.y += 1;
+	mCamera->setPosition(camera_pos);
+	mCamera->lookAt((playerObject->ourNode->getOrientation()*(playerObject->ourNode->getChild("SelectorNode")->getPosition()*playerObject->ourNode->getScale()))+playerObject->ourNode->getPosition());
 }
+
 //-------------------------------------------------------------------------------------
 void GameFramework::createFrameListener(void)
 {
@@ -460,17 +469,56 @@ void GameFramework::handleAction(Action action, WorldObject* target, WorldObject
 		cout << "Unhandled action attempted!\n";
 	}
 }
+bool GameFramework::mouseMoved( const OIS::MouseEvent &arg )
+{
+	//if inventory opened, do  this...
+	//if (mTrayMgr->injectMouseMove(arg)) return true;
+	//mTrayMgr->getCursorImage()->show();
+
+	static double cursor_dist = 500;
+	// When the mouse is moved, yaw the player and camera accordingly. (rotate from side to side)
+	// arg.state contains all the movement information from the mouse. X keeps track of changes in the cursor's absolute X position, and Y keeps track of the Y.
+	// the .rel is the relative movement since the last time mouseMoved was called.
+	playerObject->ourNode->yaw(Ogre::Degree(-arg.state.X.rel * 0.15f));
+	mCamera->yaw(Ogre::Degree(-arg.state.X.rel * 0.15f));
+
+	// When the mouse is moved, pitch the camera accordingly. (rotate up and down)
+	mCamera->pitch(Ogre::Degree(-arg.state.Y.rel * 0.15f));
+
+	// arg.state.Z keeps track of the scroll wheel. If the player moves the scroll wheel, change how far the cursor is from them.
+	if (arg.state.Z.rel < -1) {
+		cursor_dist += arg.state.Z.rel / 15 - cursor_dist / 10.0;
+	} else if (arg.state.Z.rel > 1) {
+		cursor_dist += arg.state.Z.rel / 15 + cursor_dist / 10.0;
+	}
+
+	// Now we need to update the selector thing to move with our view.
+	Ogre::Node* selector_node = playerObject->ourNode->getChild("SelectorNode");
+	// Rotate it appropriately. It is important that this is the same amount that mCamera was pitched by, otherwise it will get out of sync.
+	selector_node->pitch(Ogre::Degree(-arg.state.Y.rel * 0.15f));
+	// Move it back to where our viewpoint is
+	selector_node->setPosition(Ogre::Vector3(0,1.0/playerObject->ourNode->getScale().y,0));
+	// Move it "forward" according to the local reference point. If we used "forward" according to the player's reference point, it wouldn't take into account
+	// any changes in the orientation of the node.
+	selector_node->translate(0,0,-cursor_dist,Ogre::Node::TS_LOCAL);
+
+	// Because yes.
+    return true;
+}
 
 bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 {
-	static bool last_left_mouse = false;     // If the left mouse button is depressed
-	static bool last_right_mouse = false;     // If the right mouse button is depressed
-	static bool affixCamera = true;
+	static bool last_left_mouse = false;      // If the left mouse button was depressed last frame
+	static bool last_right_mouse = false;     // If the right mouse button was depressed last frame
+	static float time_since_left_click = 0;
+	static float time_since_right_click = 0;
+	static float click_delay = 0.2;		  // Allows continued actions while the mouse buttons are depressed every click_delay seconds.
+	static bool affixCamera = true;			  // Keeps the camera stuck to the player. If the player turns this off, they will still be able to move, but the camera won't follow.
     static Ogre::Real mRotate = 0.13;   // The rotate constant
 	static Ogre::Real mMove = playerObject->speed;      // The movement constant
 	static bool has_jumped = false;
 	static Action primary_action(ACTION_CHOP, 5);
-	static Action secondary_action(ACTION_MODIFY_VOXELS, 254, 10);
+	static Action secondary_action(ACTION_MODIFY_VOXELS, 254, 20);
 	
 	bool cur_left_mouse = mMouse->getMouseState().buttonDown(OIS::MB_Left);
 	bool cur_right_mouse = mMouse->getMouseState().buttonDown(OIS::MB_Right);
@@ -480,16 +528,64 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 		PlantObject temp_obj(playerObject->ourNode,0);
 		temp_obj.objectType = OBJECT_NONE;
 		handleAction(primary_action, &temp_obj, playerObject);
+		time_since_left_click = 0;
+	} else if (cur_left_mouse) {
+		if (time_since_left_click >= click_delay) {
+			PlantObject temp_obj(playerObject->ourNode,0);
+			temp_obj.objectType = OBJECT_NONE;
+			handleAction(primary_action, &temp_obj, playerObject);
+			time_since_left_click = 0;
+		} else {
+			time_since_left_click += evt.timeSinceLastFrame;
+		}
 	}
 	//record the mouse state for the next frame's use
 	last_left_mouse = cur_left_mouse;
+	
 
 	if (cur_right_mouse && !last_right_mouse) {
 		PlantObject temp_obj(playerObject->ourNode,0);
 		temp_obj.objectType = OBJECT_NONE;
 		handleAction(secondary_action, &temp_obj, playerObject);
+		time_since_right_click = 0;
+	} else if (cur_right_mouse) {
+		if (time_since_right_click >= click_delay) {
+			PlantObject temp_obj(playerObject->ourNode,0);
+			temp_obj.objectType = OBJECT_NONE;
+			handleAction(secondary_action, &temp_obj, playerObject);
+			time_since_right_click = 0;
+		} else {
+			time_since_right_click += evt.timeSinceLastFrame;
+		}
 	}
 	last_right_mouse = cur_right_mouse;
+
+	//hacky material change code for until we get the inventory working.
+	static float mat_change_timer = 0;
+	if (mKeyboard->isKeyDown(OIS::KC_X) && (mat_change_timer < 0.01)) {
+		if ((primary_action.actionType == ACTION_MODIFY_VOXELS) && (primary_action.actionVar > 240)) {
+			primary_action.actionVar--;
+			cout << "Material changed to " << primary_action.actionVar << endl;
+			mat_change_timer = 0.5;
+		} else if ((secondary_action.actionType == ACTION_MODIFY_VOXELS) && (secondary_action.actionVar > 240)) {
+			secondary_action.actionVar--;
+			cout << "Material changed to " << secondary_action.actionVar << endl;
+			mat_change_timer = 0.5;
+		}
+	} else if (mKeyboard->isKeyDown(OIS::KC_Z) && (mat_change_timer < 0.01)) {
+		if ((primary_action.actionType == ACTION_MODIFY_VOXELS) && (primary_action.actionVar < 255) && (primary_action.actionVar >= 240)) {
+			primary_action.actionVar++;
+			cout << "Material changed to " << primary_action.actionVar << endl;
+			mat_change_timer = 0.5;
+		} else if ((secondary_action.actionType == ACTION_MODIFY_VOXELS) && (secondary_action.actionVar < 255) && (secondary_action.actionVar >= 240)) {
+			secondary_action.actionVar++;
+			cout << "Material changed to " << secondary_action.actionVar << endl;
+			mat_change_timer = 0.5;
+		}
+	}
+	if (mat_change_timer > 0) {
+		mat_change_timer -= evt.timeSinceLastFrame;
+	}
 
 	//use the num keys to switch between actions
 	if (mKeyboard->isKeyDown(OIS::KC_1)) {
@@ -506,24 +602,24 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 		if ((mKeyboard->isKeyDown(OIS::KC_LSHIFT)) || (mKeyboard->isKeyDown(OIS::KC_RSHIFT))) {
 			secondary_action.actionType = ACTION_MODIFY_VOXELS;
 			secondary_action.actionVar = 0; //the material (air)
-			secondary_action.actionVar2 = 5; //the amount we want to change by
+			secondary_action.actionVar2 = 20; //the amount we want to change by
 			mGUI->findWidget<MyGUI::Widget>("RightClickAction")->setProperty("ImageTexture","shovel.png");
 		} else {
 			primary_action.actionType = ACTION_MODIFY_VOXELS;
 			primary_action.actionVar = 0; //the material (air)
-			primary_action.actionVar2 = 5; //the amount we want to change by
+			primary_action.actionVar2 = 20; //the amount we want to change by
 			mGUI->findWidget<MyGUI::Widget>("LeftClickAction")->setProperty("ImageTexture","shovel.png");
 		}
 	} else if (mKeyboard->isKeyDown(OIS::KC_3)) { //add voxels
 		if ((mKeyboard->isKeyDown(OIS::KC_LSHIFT)) || (mKeyboard->isKeyDown(OIS::KC_RSHIFT))) {
 			secondary_action.actionType = ACTION_MODIFY_VOXELS;
 			secondary_action.actionVar = 254; //the material (stone?)
-			secondary_action.actionVar2 = 10; //the amount we want to change by
+			secondary_action.actionVar2 = 20; //the amount we want to change by
 			mGUI->findWidget<MyGUI::Widget>("RightClickAction")->setProperty("ImageTexture","brick.png");
 		} else {
 			primary_action.actionType = ACTION_MODIFY_VOXELS;
 			primary_action.actionVar = 254; //the material (stone?)
-			primary_action.actionVar2 = 10; //the amount we want to change by
+			primary_action.actionVar2 = 20; //the amount we want to change by
 			mGUI->findWidget<MyGUI::Widget>("LeftClickAction")->setProperty("ImageTexture","brick.png");
 		}
 	}
@@ -535,21 +631,10 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 		affixCamera = false;
 	}
 
-	//use x and z to lower and raise the selector
-	if (mKeyboard->isKeyDown(OIS::KC_Z)) {
-		Ogre::Vector3 temp_vector = Ogre::Vector3::ZERO;
-		temp_vector.y += 2;
-		playerObject->ourNode->getChild("SelectorNode")->translate(temp_vector, Ogre::Node::TS_LOCAL);
-	} else if(mKeyboard->isKeyDown(OIS::KC_X))
-	{
-		Ogre::Vector3 temp_vector = Ogre::Vector3::ZERO;
-		temp_vector.y -= 2;
-		playerObject->ourNode->getChild("SelectorNode")->translate(temp_vector, Ogre::Node::TS_LOCAL);
-	}
 	float acceleration = 0.17;
 	float max_speed = 5;
 	float rest_threshold = 0.001;
-	if (mKeyboard->isKeyDown(OIS::KC_I)) // Forward key pressed
+	if (mKeyboard->isKeyDown(OIS::KC_W)) // Forward key pressed
 	{
 		if (-playerObject->momentum.z < max_speed) {
 			playerObject->momentum.z -= acceleration;
@@ -560,7 +645,7 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 			playerObject->momentum.z = 0;
 		}
 	}
-	if (mKeyboard->isKeyDown(OIS::KC_K)) // Backward key pressed
+	if (mKeyboard->isKeyDown(OIS::KC_S)) // Backward key pressed
 	{
 		if (playerObject->momentum.z < max_speed) {
 			playerObject->momentum.z += acceleration;
@@ -571,13 +656,13 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 			playerObject->momentum.z = 0;
 		}
 	}
-	if (mKeyboard->isKeyDown(OIS::KC_J)) // Left yaw
+	if (mKeyboard->isKeyDown(OIS::KC_Q)) // Left yaw
 	{
 		playerObject->ourNode->yaw(Ogre::Degree(mRotate * 10));
 	}
-	if (mKeyboard->isKeyDown(OIS::KC_U)) // Left strafe
+	if (mKeyboard->isKeyDown(OIS::KC_A)) // Left strafe
 	{
-		if (-playerObject->momentum.x < max_speed) {
+		if (-playerObject->momentum.x < max_speed/2) {
 			playerObject->momentum.x -= acceleration;
 		}
 	} else if (-playerObject->momentum.x > rest_threshold) {
@@ -586,13 +671,13 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 			playerObject->momentum.x = 0;
 		}
 	}
-	if (mKeyboard->isKeyDown(OIS::KC_L)) // Right yaw
+	if (mKeyboard->isKeyDown(OIS::KC_E)) // Right yaw
 	{
 		playerObject->ourNode->yaw(Ogre::Degree(-mRotate * 10));
 	}
-	if (mKeyboard->isKeyDown(OIS::KC_O)) // Right strafe
+	if (mKeyboard->isKeyDown(OIS::KC_D)) // Right strafe
 	{
-		if (playerObject->momentum.x < max_speed) {
+		if (playerObject->momentum.x < max_speed/2) {
 			playerObject->momentum.x += acceleration;
 		}
 	} else if (playerObject->momentum.x > rest_threshold) {
@@ -627,9 +712,9 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 
 		//if the new position isn't colliding with an object, make that our position and update the camera. Otherwise, move back to where we were.
 		if (checkForCollision(&player_pos) == -1) {
-			double height_diff = mapManager->getAveragedHeightAt(player_pos.x,player_pos.y+1,player_pos.z) - player_pos.y + player_height;
+			double height_diff = mapManager->getAveragedHeightAt(player_pos.x,player_pos.y+1.5,player_pos.z) - player_pos.y + player_height;
 			if (height_diff > 0.2) {
-				height_diff = max(height_diff, (mapManager->getAveragedHeightAt(player_pos.x,player_pos.y+2,player_pos.z) - player_pos.y + player_height));
+				height_diff = max(height_diff, (mapManager->getAveragedHeightAt(player_pos.x,player_pos.y+2.5,player_pos.z) - player_pos.y + player_height));
 			}
 			//cout << "Height diff: " << height_diff << endl;
 			float hop_threshold = 0.1;
@@ -676,9 +761,9 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 		}
 	}
 
-	if (affixCamera) {
+	/*if (affixCamera) {
 		mCamera->lookAt((playerObject->ourNode->getOrientation()*(playerObject->ourNode->getChild("SelectorNode")->getPosition()*playerObject->ourNode->getScale()))+playerObject->ourNode->getPosition());
-	}
+	}*/
 
 
 

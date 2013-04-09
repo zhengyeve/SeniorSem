@@ -270,11 +270,14 @@ void MapManager::drawChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z, Og
 				}*/
 				last_mat = min(vecVertices[vecIndices[index]].getMaterial(),min(vecVertices[vecIndices[index+1]].getMaterial(),vecVertices[vecIndices[index+2]].getMaterial()));
 			}
-			if (last_mat == 254) {
+			tex_x += ((255 - last_mat) % 4) * 256;
+			tex_y += ((int)((255 - last_mat) / 4)) * 256;
+
+			/*if (last_mat == 254) {
 				//cout << "CHANGING TEX\n";
 				tex_x += 768;
 				tex_y += 768;
-			}
+			}*/
 			ogreMesh->textureCoord(tex_x/1024.0, tex_y/1024.0);
 			++vert_count;
 		}
@@ -485,7 +488,7 @@ double MapManager::getHeightAt(int32_t x, int32_t y, int32_t z, int32_t column_s
 	//cout << "Checking height (" << x << ", " << y << ", " << z << ")\n";
 	Vector3DInt32 point(x, y, z);
 	if (!mapData->getEnclosingRegion().containsPoint(point)) {
-		cout << "Tried to height-check point (" << x << ", " << y << ", " << z << ") which is outside the volume.\n";
+		//cout << "Tried to height-check point (" << x << ", " << y << ", " << z << ") which is outside the volume.\n";
 		return -999;
 	}
 	//for every height, going downwards from the starting position...
@@ -496,7 +499,7 @@ double MapManager::getHeightAt(int32_t x, int32_t y, int32_t z, int32_t column_s
 				//will have to change this if we implement other non-solid voxel values (such as smoke)
 				//cout << "Checking height (" << check_x << ", " << check_y << ", " << check_z << ")\n";
 				MaterialDensityPair88 voxel_val = getVoxelAt(check_x, check_y, check_z);
-				if (voxel_val.getMaterial() != 0) {
+				if ((voxel_val.getMaterial() != 0) && (voxel_val.getDensity() > (255/3))) {
 					//cout << "Result: " << check_y << endl;
 					return ((double)check_y - ((255 - voxel_val.getDensity())/255.0));
 				}
@@ -519,7 +522,6 @@ bool MapManager::setVoxelAt(int32_t x, int32_t y, int32_t z, uint8_t material, u
 	if ((voxel_val.getMaterial() != material) || (voxel_val.getDensity() < 254)) {
 		//record the highest voxel for posterity. In the future we can check for height starting at the highest known point and moving downwards.
 		if ((y > maxHeight) && (material > 0)) {
-			//cout << "New max height: " << y << " from setting point (" << x << ", " << y << ", " << z << ") to " << (unsigned int)material << ".\n";
 			maxHeight = y;
 		}
 
@@ -559,6 +561,10 @@ bool MapManager::setVoxelAt(int32_t x, int32_t y, int32_t z, uint8_t material, u
 					if (target_density > 255) {
 						target_density = 255;
 					}
+				}
+				//minimum amount for a visible change
+				if (target_density < 160) {
+					target_density = 160;
 				}
 				voxel_val.setDensity(target_density);
 				voxel_val.setMaterial(material);

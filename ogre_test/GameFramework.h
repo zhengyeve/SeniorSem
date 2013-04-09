@@ -51,6 +51,7 @@ private:
 	MapManager* mapManager;
 
 	//FUNCTIONS
+	bool mouseMoved(const OIS::MouseEvent &arg);
 	//handles all input, like key presses or mouse clicks
 	bool processUnbufferedInput(const Ogre::FrameEvent& evt);
 
