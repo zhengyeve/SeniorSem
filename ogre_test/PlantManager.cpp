@@ -7,7 +7,6 @@ PlantManager::PlantManager(void) {
 	//TODO: Use an XML file or something to read in these plant values
 
 	//See the PlantManager.h for a description of each variable.
-<<<<<<< HEAD
 	PlantProfile temp_plant;
 	temp_plant.plantType = PLANT_OAK;
 	temp_plant.frequency = 100;
@@ -98,40 +97,6 @@ PlantManager::PlantManager(void) {
 	temp_plant.rangeFlatness = 0.50;
 	temp_plant.weightFlatness = 0.4;
 	plants.push_back(temp_plant);
-=======
-	PlantProfile oak;
-	oak.plantType = PLANT_OAK;
-	oak.frequency = 100;
-	oak.idealHeight = 24;
-	oak.rangeHeight = 40;
-	oak.weightHeight = 1.0;
-	oak.idealFlatness = 0.6;
-	oak.rangeFlatness = 0.4;
-	oak.weightFlatness = 0.4;
-	plants.push_back(oak);
-
-	PlantProfile pine;
-	pine.plantType = PLANT_PINE;
-	pine.frequency = 75;
-	pine.idealHeight = 50;
-	pine.rangeHeight = 40;
-	pine.weightHeight = 1.0;
-	pine.idealFlatness = 0.3;
-	pine.rangeFlatness = 0.4;
-	pine.weightFlatness = 0.6;
-	plants.push_back(pine);
-
-	PlantProfile round_shroom;
-	round_shroom.plantType = PLANT_ROUND_SHROOM;
-	round_shroom.frequency = 120;
-	round_shroom.idealHeight = 35;
-	round_shroom.rangeHeight = 75;
-	round_shroom.weightHeight = 0.1;
-	round_shroom.idealFlatness = 0.85;
-	round_shroom.rangeFlatness = 0.6;
-	round_shroom.weightFlatness = 3.0;
-	plants.push_back(round_shroom);
->>>>>>> 8a872c1afa082e2c5060b20060ad13d3215b250a
 }
 
 PlantType PlantManager::getFlora(double height, float terrain_flatness) {

@@ -109,43 +109,31 @@ void GameFramework::populatePlants(PolyVox::Region region) {
 				//initialize this before the switch statement, since you can't do that inside...
 				Ogre::Entity* tree_entity;
 				Ogre::ResourcePtr clear_mat;
-<<<<<<< HEAD
-				float offset;
-				float scale = 2+(rand()%11)/10.0;
-=======
 				bool doesBlockMovement = false;
 				Ogre::Vector3 scale(2+(rand()%11)/10.0,2+(rand()%11)/10.0,2+(rand()%11)/10.0);
-				double height_offset = 0.35;
->>>>>>> 8a872c1afa082e2c5060b20060ad13d3215b250a
+				double offset = 0.35;
 				//change the model based on what plant we're placing
 				switch(to_place) {
 					case PLANT_OAK:
 						tree_entity = mSceneMgr->createEntity("oaktree.mesh");
 						clear_mat = Ogre::MaterialManager::getSingleton().getByName("Materials/Trees/ClearOak");
-<<<<<<< HEAD
 						scale /= 12;
 						offset = .3;
-=======
 						doesBlockMovement = true;
->>>>>>> 8a872c1afa082e2c5060b20060ad13d3215b250a
 						break;
 					case PLANT_PINE:
 						tree_entity = mSceneMgr->createEntity("pinetree.mesh");
 						clear_mat = Ogre::MaterialManager::getSingleton().getByName("Materials/Trees/ClearPine");
-<<<<<<< HEAD
 						scale /= 20;
-=======
 						doesBlockMovement = true;
 						scale.y /= 1.7;
 						scale.z /= 1.2;
 						scale.x /= 1.2;
-						height_offset = -0.45;
->>>>>>> 8a872c1afa082e2c5060b20060ad13d3215b250a
+						offset = -0.45;
 						break;
 					case PLANT_ROUND_SHROOM:
 						tree_entity = mSceneMgr->createEntity("roundshroom.mesh");
 						clear_mat = Ogre::MaterialManager::getSingleton().getByName("Materials/ClearGray");
-<<<<<<< HEAD
 						scale /= 20;
 						offset = 0.45;
 						break;
@@ -184,28 +172,16 @@ void GameFramework::populatePlants(PolyVox::Region region) {
 						clear_mat = Ogre::MaterialManager::getSingleton().getByName("Materials/winecup.material");
 						scale /= 70;
 						offset = .7;
-=======
-						height_offset = 0.45;
->>>>>>> 8a872c1afa082e2c5060b20060ad13d3215b250a
 						break;
 				};
 				new_pos.x = temp_x;
 				new_pos.z = temp_z;
-<<<<<<< HEAD
 				new_pos.y = mapManager->getHeightAt(new_pos.x,max_y,new_pos.z,1)+offset;
 				Ogre::SceneNode *temp_node = mSceneMgr->getRootSceneNode()->createChildSceneNode(new_pos);
 				temp_node->attachObject(tree_entity);
 				//scale the model randomly
 				
-				temp_node->scale(scale,scale,scale);
-=======
-				new_pos.y = mapManager->getHeightAt(new_pos.x,max_y,new_pos.z,1,2.2)+height_offset;
-				Ogre::SceneNode *temp_node = mSceneMgr->getRootSceneNode()->createChildSceneNode(new_pos);
-				temp_node->attachObject(tree_entity);
-				//scale the model randomly
 				temp_node->scale(scale.x,scale.y,scale.z);
-				temp_node->scale(0.1,0.1,0.1);
->>>>>>> 8a872c1afa082e2c5060b20060ad13d3215b250a
 				//give the tree a random rotation about the y-axis, so the trees aren't all aligned on a grid
 				Ogre::Radian rot_angle((Ogre::Real)(rand()%7));
 				temp_node->rotate(Ogre::Vector3(0,1,0),rot_angle);
