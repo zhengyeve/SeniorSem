@@ -18,6 +18,7 @@ CreatureObject::CreatureObject(Ogre::SceneNode* node, float collision_radius) {
 	momentum.x = momentum.y = momentum.z = 0;
 	numObjects = 1;
 	maxInventorySize = 10;
+	doesBlockMovement = true;
 }
 
 vector<Action> CreatureObject::receiveAction(Action action) {

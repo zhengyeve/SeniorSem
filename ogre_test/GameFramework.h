@@ -21,9 +21,10 @@ This source file is part of the
 #include "CreatureObject.h"
 #include "WorldObject.h"
 #include <vector>
-#include "MapChunk.h"
 #include "MapManager.h"
 using namespace std;
+
+enum CollisionMode{COLLISION_MODE_ACTION, COLLISION_MODE_MOVEMENT};
 
 class GameFramework : public BaseApplication
 {
@@ -41,6 +42,9 @@ private:
 	//stores all the objects in the world, such as trees
 	vector<WorldObject*> worldObjects;
 
+	//stores all of the creatures in the world, besides the player
+	vector<CreatureObject*> worldCreatures;
+
 	//If this is > 0, it's in the process of a countdown to exit
 	float exitTimer;
 
@@ -56,7 +60,7 @@ private:
 	bool processUnbufferedInput(const Ogre::FrameEvent& evt);
 
 	//returns the index of the collided object in the worldObjects vector, or -1 if no collision occurred.
-	int checkForCollision(Ogre::Vector3* to_check);
+	int checkForCollision(Ogre::Vector3* to_check, CollisionMode mode);
 
 	//deletes an object in the world
 	void removeWorldObject(int index, bool do_delete=true);

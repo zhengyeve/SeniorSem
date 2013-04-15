@@ -40,6 +40,8 @@ using namespace std;
 
 GameFramework::GameFramework(void)
 {
+	playerObject = 0;
+	mapManager = 0;
 }
  
 //-------------------------------------------------------------------------------------
@@ -48,8 +50,12 @@ GameFramework::~GameFramework(void)
 	for (int i = 0; i < worldObjects.size(); ++i) {
 		delete(worldObjects[i]);
 	}
-	delete(playerObject);
-	delete(mapManager);
+	if (playerObject) {
+		delete(playerObject);
+	}
+	if (mapManager) {
+		delete(mapManager);
+	}
 }
 
 void GameFramework::destroyScene(void)
@@ -103,34 +109,45 @@ void GameFramework::populatePlants(PolyVox::Region region) {
 				//initialize this before the switch statement, since you can't do that inside...
 				Ogre::Entity* tree_entity;
 				Ogre::ResourcePtr clear_mat;
+				bool doesBlockMovement = false;
+				Ogre::Vector3 scale(2+(rand()%11)/10.0,2+(rand()%11)/10.0,2+(rand()%11)/10.0);
+				double height_offset = 0.35;
 				//change the model based on what plant we're placing
 				switch(to_place) {
 					case PLANT_OAK:
 						tree_entity = mSceneMgr->createEntity("oaktree.mesh");
 						clear_mat = Ogre::MaterialManager::getSingleton().getByName("Materials/Trees/ClearOak");
+						doesBlockMovement = true;
 						break;
 					case PLANT_PINE:
 						tree_entity = mSceneMgr->createEntity("pinetree.mesh");
 						clear_mat = Ogre::MaterialManager::getSingleton().getByName("Materials/Trees/ClearPine");
+						doesBlockMovement = true;
+						scale.y /= 1.7;
+						scale.z /= 1.2;
+						scale.x /= 1.2;
+						height_offset = -0.45;
 						break;
 					case PLANT_ROUND_SHROOM:
 						tree_entity = mSceneMgr->createEntity("roundshroom.mesh");
 						clear_mat = Ogre::MaterialManager::getSingleton().getByName("Materials/ClearGray");
+						height_offset = 0.45;
 						break;
 				};
 				new_pos.x = temp_x;
 				new_pos.z = temp_z;
-				new_pos.y = mapManager->getHeightAt(new_pos.x,max_y,new_pos.z,1)+0.45;
+				new_pos.y = mapManager->getHeightAt(new_pos.x,max_y,new_pos.z,1,2.2)+height_offset;
 				Ogre::SceneNode *temp_node = mSceneMgr->getRootSceneNode()->createChildSceneNode(new_pos);
 				temp_node->attachObject(tree_entity);
 				//scale the model randomly
-				temp_node->scale(2+(rand()%11)/10.0,2+(rand()%11)/10.0,2+(rand()%11)/10.0);
+				temp_node->scale(scale.x,scale.y,scale.z);
 				temp_node->scale(0.1,0.1,0.1);
 				//give the tree a random rotation about the y-axis, so the trees aren't all aligned on a grid
 				Ogre::Radian rot_angle((Ogre::Real)(rand()%7));
 				temp_node->rotate(Ogre::Vector3(0,1,0),rot_angle);
 				PlantObject* new_obj = new PlantObject(temp_node,0.3);
 				new_obj->subtype = (int)to_place;
+				new_obj->doesBlockMovement = doesBlockMovement;
 				if (to_place == PLANT_ROUND_SHROOM) {
 					new_obj->setEatable(true, 10);
 				}
@@ -142,14 +159,10 @@ void GameFramework::populatePlants(PolyVox::Region region) {
 	cout << "Populated " << worldObjects.size() << " plants.\n";
 }
 
-
 void BaseApplication::mousePressedExit(MyGUI::Widget* _widget)	// EXIT button
 {
 	mShutDown = true;
 }
-
-
-
 
 void GameFramework::createScene(void)
 { 
@@ -159,9 +172,6 @@ void GameFramework::createScene(void)
 	srand((int)std::time(NULL));
 	totalScore = 0;
 
-	
-
-
 	//make sure the exit timer hasn't started
 	exitTimer = -1;
 
@@ -169,8 +179,6 @@ void GameFramework::createScene(void)
     //Ogre::MaterialManager::getSingleton().setDefaultAnisotropy(7);
 	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("../../myMedia","FileSystem");
 	Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
-	mSceneMgr->setSkyDome(true, "Examples/CloudySky", 5, 8, 5000, false);
- //change max draw distanceaasdf
     Ogre::Vector3 lightdir(0.55, -0.3, 0.75);
     lightdir.normalise();
  
@@ -182,36 +190,6 @@ void GameFramework::createScene(void)
  
     mSceneMgr->setAmbientLight(Ogre::ColourValue(0.2, 0.2, 0.2));
 
- ////
- ////   mTerrainGlobals = OGRE_NEW Ogre::TerrainGlobalOptions();
- ////   mTerrainGroup = OGRE_NEW Ogre::TerrainGroup(mSceneMgr, Ogre::Terrain::ALIGN_X_Z, 257, 3000.0f);
- ////   mTerrainGroup->setFilenameConvention(Ogre::String("TestTerrain1"), Ogre::String("dat"));
- ////   mTerrainGroup->setOrigin(Ogre::Vector3::ZERO);
- ////
- ////   configureTerrainDefaults(light);
- ////
- ////   for (long x = 0; x <= 0; ++x)
- ////       for (long y = 0; y <= 0; ++y)
- ////           defineTerrain(x, y);
-
-
- ////
- ////   // sync load since we want everything in place when we start
- ////   mTerrainGroup->loadAllTerrains(true);
-	//// 
- ////   if (mTerrainsImported)
- ////   {
- ////       Ogre::TerrainGroup::TerrainIterator ti = mTerrainGroup->getTerrainIterator();
- ////       while(ti.hasMoreElements())
- ////       {
- ////           Ogre::Terrain* t = ti.getNext()->instance;
- ////           initBlendMaps(t);
- ////       }
- ////   }
-
-	//////mSceneMgr->setAmbientLight(Ogre::ColourValue(1, 1, 1));
-
-
 	mapManager = new MapManager();
 	mapManager->draw(0,0,0,mSceneMgr,true);
 
@@ -220,12 +198,13 @@ void GameFramework::createScene(void)
 
 	// starting of gui configuration
 
-//	initializeGUI();
+	//	initializeGUI();
 	//mGUI->load("Basic.layout");
 	//mGUI->findWidget<MyGUI::Window>("Result")->setVisible(false);
 	//mGUI->findWidget<MyGUI::Widget>("HelpPanel")->setVisible(true);
 
 
+	//set up the player node, model, and object
 	Ogre::Entity* ninjaEntity = mSceneMgr->createEntity("Ninja", "ninja.mesh");
 	Ogre::SceneNode *node = mSceneMgr->getRootSceneNode()->createChildSceneNode("PlayerNode");
 	node->attachObject(ninjaEntity);
@@ -234,40 +213,47 @@ void GameFramework::createScene(void)
 	temp_pos.y = mapManager->getHeightAt(temp_pos.x, mapManager->getMaxHeight()+1, temp_pos.z)+2;
 	cout << "Setting player's y to: " << temp_pos.y << " because we checked (" << temp_pos.x << ", " << mapManager->getMaxHeight() << ", " << temp_pos.z << ")\n";
 	node->setPosition(temp_pos);
-	Ogre::SceneNode* selector_node = node->createChildSceneNode("SelectorNode");
+	playerObject = new CreatureObject(node, 0.3);
+	playerObject->speed = 400*node->getScale().x;
+	playerObject->hunger = INITIAL_HUNGER;
 
+	//set up the selector object
+	Ogre::SceneNode* selector_node = node->createChildSceneNode("SelectorNode");
 	// This translation may seem redundant since we update the selector's position every time the mouse moves, but if we don't do this
 	// then the camera tries to look at the selector which is in the same position as the camera itself, and an acid trip results.
 	Ogre::Vector3 temp_vector = Ogre::Vector3::ZERO;
 	temp_vector.z -= 250;
 	temp_vector.y += 80;
 	selector_node->translate(temp_vector, Ogre::Node::TS_LOCAL);
-
 	selector_node->attachObject(mSceneMgr->createEntity("Selector", "RoundShroom.mesh"));
 	selector_node->scale(10, 10, 10);
 	selector_node->pitch(Ogre::Degree(-20));
 
-	playerObject = new CreatureObject(node, 0.3);
-	playerObject->speed = 400*node->getScale().x;
-
-	playerObject->hunger = INITIAL_HUNGER;
-
-	mCamera->setPosition(Ogre::Vector3(0, 50, 50));
-	mCamera->lookAt(node->getPosition());
-    mCamera->setNearClipDistance(0.1);
-    mCamera->setFarClipDistance(9000);
-
-	Ogre::Vector3 temp = node->getPosition();
-	int collision_index = checkForCollision(&temp);
-	while (collision_index != -1) {
-		removeWorldObject(collision_index);
-		collision_index = checkForCollision(&temp);
-	}
-
+	//set up the camera (viewpoint)
 	Ogre::Vector3 camera_pos = playerObject->ourNode->getPosition();
 	camera_pos.y += 1;
 	mCamera->setPosition(camera_pos);
+	//this long line is to get the position of the selector object, so the camera will start out looking at it.
 	mCamera->lookAt((playerObject->ourNode->getOrientation()*(playerObject->ourNode->getChild("SelectorNode")->getPosition()*playerObject->ourNode->getScale()))+playerObject->ourNode->getPosition());
+    mCamera->setNearClipDistance(0.1);
+    mCamera->setFarClipDistance(9000);
+	
+	//set up the fog and skyplane
+	Ogre::ColourValue fadeColour(0.9, 0.9, 0.9);
+	mSceneMgr->setFog(Ogre::FOG_EXP2, fadeColour, 0.03);
+	mWindow->getViewport(0)->setBackgroundColour(fadeColour);
+	Ogre::Plane plane;
+	plane.d = 20;
+	plane.normal = Ogre::Vector3::NEGATIVE_UNIT_Y;
+	mSceneMgr->setSkyPlane(true, plane, "Examples/CloudySky", 500, 1000, true, 0.5, 150, 150);
+
+	//check for collisions where the player spawned. If the player spawned on some plants, destroy them
+	Ogre::Vector3 temp = node->getPosition();
+	int collision_index = checkForCollision(&temp, COLLISION_MODE_MOVEMENT);
+	while (collision_index != -1) {
+		removeWorldObject(collision_index);
+		collision_index = checkForCollision(&temp, COLLISION_MODE_MOVEMENT);
+	}
 }
 
 //-------------------------------------------------------------------------------------
@@ -291,7 +277,13 @@ bool GameFramework::frameRenderingQueued(const Ogre::FrameEvent& evt)
     mMouse->capture();
     mTrayMgr->frameRenderingQueued(evt);
 
-
+	static float timeSinceLastRedraw = 0;
+	timeSinceLastRedraw += evt.timeSinceLastFrame;
+	if ((playerObject) && timeSinceLastRedraw > 1.5) {
+		timeSinceLastRedraw = 0;
+		Region render_area = mapManager->draw(playerObject->ourNode->getPosition().x, playerObject->ourNode->getPosition().y, playerObject->ourNode->getPosition().z, mSceneMgr);
+		updateVisibleObjects(render_area);
+	}
 
 
 
@@ -321,7 +313,7 @@ bool GameFramework::frameRenderingQueued(const Ogre::FrameEvent& evt)
 		if (exitTimer < 0) {
 			exitTimer = 5;
 
-			string resultText("Starved to death! :c\nYou total Score is: "), resultScore;
+			string resultText("Starved to death! :c\nYour total Score is: "), resultScore;
 			
 			stringstream tmp;
 			tmp << totalScore;
@@ -374,10 +366,12 @@ bool GameFramework::frameRenderingQueued(const Ogre::FrameEvent& evt)
     return ret;
 }
 
-int GameFramework::checkForCollision(Ogre::Vector3* to_check) {
+int GameFramework::checkForCollision(Ogre::Vector3* to_check, CollisionMode mode) {
 	for (int i = 0; i < worldObjects.size(); ++i) {
 		if (to_check->squaredDistance(worldObjects[i]->ourNode->getPosition()) < Ogre::Math::Sqr(worldObjects[i]->collisionRadius + playerObject->collisionRadius)) {
-			return i;
+			if (worldObjects[i]->blocksMovement() || (mode != COLLISION_MODE_MOVEMENT)) {
+				return i;
+			}
 		}
 	}
 	return -1;
@@ -402,7 +396,7 @@ void GameFramework::handleAction(Action action, WorldObject* target, WorldObject
 		//WorldObject* actual_target;
 		if (target->isNone()) {
 			//check for collisions with that new point, and if something was hit we apply an action to it
-			int coll_index = checkForCollision(&selector_pos);
+			int coll_index = checkForCollision(&selector_pos, COLLISION_MODE_ACTION);
 			if (coll_index != -1) {
 				target = worldObjects[coll_index];
 			}
@@ -437,6 +431,7 @@ void GameFramework::handleAction(Action action, WorldObject* target, WorldObject
 		if (target->objectType == OBJECT_CREATURE) {
 			CreatureObject* receiver_creature = (CreatureObject*) target;
 			if (receiver_creature->obtainObject(actor)) {
+				totalScore += 10;
 				bool foundit = false;
 				for (unsigned int i = 0; i < worldObjects.size(); ++i) {
 					if (worldObjects[i] == actor) {
@@ -469,6 +464,7 @@ void GameFramework::handleAction(Action action, WorldObject* target, WorldObject
 		cout << "Unhandled action attempted!\n";
 	}
 }
+
 bool GameFramework::mouseMoved( const OIS::MouseEvent &arg )
 {
 	//if inventory opened, do  this...
@@ -711,7 +707,7 @@ bool GameFramework::processUnbufferedInput(const Ogre::FrameEvent& evt)
 		//player_pos.y = mapManager->getHeightAt(player_pos.x,player_pos.y+1,player_pos.z)+player_height;
 
 		//if the new position isn't colliding with an object, make that our position and update the camera. Otherwise, move back to where we were.
-		if (checkForCollision(&player_pos) == -1) {
+		if (checkForCollision(&player_pos, COLLISION_MODE_MOVEMENT) == -1) {
 			double height_diff = mapManager->getAveragedHeightAt(player_pos.x,player_pos.y+1.5,player_pos.z) - player_pos.y + player_height;
 			if (height_diff > 0.2) {
 				height_diff = max(height_diff, (mapManager->getAveragedHeightAt(player_pos.x,player_pos.y+2.5,player_pos.z) - player_pos.y + player_height));

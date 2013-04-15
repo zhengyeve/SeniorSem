@@ -1,12 +1,21 @@
 #ifndef __MAPMANAGER_H__
 #define __MAPMANAGER_H__
 
-#include "MapChunk.h"
 #include "PolyVoxCore/LargeVolume.h"
 #include <vector>
 #include "PolyVoxCore/MaterialDensityPair.h"
+#include "PolyVoxCore/SimpleVolume.h"
+#include "PolyVoxCore/CubicSurfaceExtractorWithNormals.h"
+#include "PolyVoxCore/MarchingCubesSurfaceExtractor.h"
+#include "PolyVoxCore/SurfaceMesh.h"
+#include "PolyVoxCore/Region.h"
+#include "PolyVoxCore/LargeVolume.h"
+#include <OgreSceneManager.h>
+#include <OgreManualObject.h>
+#include <string>
 
 using namespace std;
+using namespace PolyVox;
 
 class MapManager
 {
@@ -32,7 +41,7 @@ public:
 	Region draw(int32_t player_x, int32_t player_y, int32_t player_z, Ogre::SceneManager* mSceneMgr, bool force_redraw = false);
 	void setMaxDrawDist(unsigned int dist_from_player);
 	//gets the highest voxel in a column of size column_width, going downwards from the point
-	double getHeightAt(int32_t x, int32_t y, int32_t z, int32_t column_width = 1);
+	double getHeightAt(int32_t x, int32_t y, int32_t z, int32_t column_width = 1, int sensitivity = 8);
 	//gets an averaged height for a point, going downwards from (x, y, z)
 	double getAveragedHeightAt(double x, double y, double z);
 	//the queue_update tells the map manager whether or not this should add the affected chunk to the "need to be re-drawn" list. This is not desireable if,

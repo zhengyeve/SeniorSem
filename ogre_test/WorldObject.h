@@ -30,7 +30,7 @@ class WorldObject
 public:
 	float collisionRadius;
 	Ogre::SceneNode* ourNode;
-	bool isClear;
+	bool isClear, doesBlockMovement;
 	ObjectType objectType;
 	int subtype;
 	unsigned int numObjects;
@@ -38,8 +38,9 @@ public:
 	WorldObject(void);
 	virtual vector<Action> receiveAction(Action action);
 	virtual bool operator==(const WorldObject& other)=0;
-	virtual string getName();
+	virtual string getName(void);
 	bool isNone(void);
+	bool blocksMovement(void);
 };
 
 #endif

@@ -8,6 +8,7 @@ PlantObject::PlantObject(Ogre::SceneNode* node, float collision_radius) {
 	objectType = OBJECT_PLANT;
 	isEatable = false;
 	numObjects = 1;
+	doesBlockMovement = false;
 }
 
 vector<Action> PlantObject::receiveAction(Action action) {
