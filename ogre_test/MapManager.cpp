@@ -121,19 +121,83 @@ void MapManager::smoothTerrain(PolyVox::Region area) {
 	//cout << "Map smoothing complete.\n";
 }
 
+double calcDensity(int x, int y, int z) {
+	static double seed = rand();
+	int offset_x = x + seed;
+	int offset_z = z + seed;
+
+	double density = 255 - y*4;
+	if (density+135 < 15) {
+		return 0;
+	} else if (density-135 > 240) {
+		return 255;
+	}
+	float freq = 0.08;
+	float amp = 30;
+	density += sin((double)offset_z*freq)*amp;
+	density += sin((double)offset_x*freq*2+11)*amp/2.0;
+	density += sin((double)offset_z*freq/2.0+7)*amp/2.0;
+	density += sin((double)offset_x*freq/2.0+1)*amp;
+	density += sin((double)(offset_x+offset_z)*freq/20.0+13)*amp/2.0;
+	density += sin((double)(offset_x+offset_z)*freq/20.0+17)*amp/2.0;
+	density += sin((double)(3.2-offset_x)*freq+17)*amp/2.0;
+	if (density < 128) {
+		return 0;
+	} else if (density > 255) {
+		return 255;
+	} else {
+		return density;
+	}
+}
+
 MapManager::MapManager(void) {
-	maxDrawDist = 100;
+	maxDrawDist = 1000;
 	maxHeight = -100;
 	mapData = new LargeVolume<MaterialDensityPair88>(Region(Vector3DInt32(-200,-200,-200), Vector3DInt32(200,200,200)));
 	cout << "Creating map.\n";
 	for (int x = -200; x < 200; ++x) {
 		for (int y = -200; y < 200; ++y) {
 			for (int z = -200; z < 200; ++z) {
-				if ((y+sin((double)z*0.05)*10) < 30) {
+				//double density = 255 - ((y-40.0)+sin((double)z*0.04)*20.0);
+				double density = calcDensity(x,y,z);
+				int neighbor_smoothing = 20;
+				if ((density > 10) && (density < 255)) {
+					if (calcDensity(x-1,y,z) < 128) {
+						density -= neighbor_smoothing;
+					}
+					if (calcDensity(x,y,z+1) < 128) {
+						density -= neighbor_smoothing;
+					}
+					if (calcDensity(x+1,y,z) < 128) {
+						density -= neighbor_smoothing;
+					}
+					if (calcDensity(x,y,z-1) < 128) {
+						density -= neighbor_smoothing;
+					}
+					if (calcDensity(x,y,z+1) < 128) {
+						density -= neighbor_smoothing;
+					}
+					if (calcDensity(x+1,y,z) < 128) {
+						density -= neighbor_smoothing;
+					}
+					if (calcDensity(x+1,y,z+1) < 128) {
+						density -= neighbor_smoothing;
+					}
+					if (calcDensity(x+1,y,z-1) < 128) {
+						density -= neighbor_smoothing;
+					}
+				}
+
+				if (density <= 10) {
+					setVoxelAt(x,y,z,0,0,false);
+				} else {
+					setVoxelAt(x,y,z,255,density,false);
+				}
+				/*if ((y+sin((double)z*0.05)*10) < 30) {
 					setVoxelAt(x,y,z,255,255,false);
 				} else {
 					setVoxelAt(x,y,z,0,0,false);
-				}
+				}*/
 				//cout << "Map data at : " << mapData->getVoxelAt(x,y,z) << endl;
 			}
 		}
@@ -143,6 +207,7 @@ MapManager::MapManager(void) {
 	cout << "Finished map creation.\n";
 	PolyVox::Vector3DInt32 lower(-100,-30,-100);
 	PolyVox::Vector3DInt32 upper(100,30,100);
+	/*smoothTerrain(Region(lower,upper));
 	smoothTerrain(Region(lower,upper));
 	smoothTerrain(Region(lower,upper));
 	smoothTerrain(Region(lower,upper));
@@ -151,8 +216,7 @@ MapManager::MapManager(void) {
 	smoothTerrain(Region(lower,upper));
 	smoothTerrain(Region(lower,upper));
 	smoothTerrain(Region(lower,upper));
-	smoothTerrain(Region(lower,upper));
-	smoothTerrain(Region(lower,upper));
+	smoothTerrain(Region(lower,upper));*/
 	lastPlayerChunk = Vector3DInt32(-999,-999,-999);
 }
 
@@ -203,7 +267,6 @@ void MapManager::drawChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z, Og
 	//Execute the surface extractor.
 	surfaceExtractor.execute();
 	cout << "Finished surface extraction.\n";
-
 	string chunk_name = getChunkName(Vector3DInt32(chunk_x, chunk_y, chunk_z));
 
 	//If this isn't the first time we've drawn this chunk, there's some cleanup required.
@@ -300,15 +363,23 @@ void MapManager::drawChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z, Og
 }
 
 Region MapManager::draw(int32_t player_x, int32_t player_y, int32_t player_z, Ogre::SceneManager* mSceneMgr, bool force_redraw) {
+	/*cout << "Drawing at: (" << player_x << ", " << player_y << ", " << player_z << ")\n";
+	cout << "Chunk cache:\n";
+	for (unsigned int i = 0; i < chunkCache.size(); ++i) {
+		cout << "\t(" << chunkCache[i].getX() << ", " << chunkCache[i].getY() << ", " << chunkCache[i].getZ() << ")\n";
+	}*/
+
 	static bool hasBeenDrawn = false;
 	cout << "Starting to draw map chunks...\n";
 
 	//calculate the new central chunk and region
 	Vector3DInt32 new_center = getChunkAt(player_x, player_y, player_z);
+	//Region render_region(new_center - Vector3DInt32(64,64,64), new_center + Vector3DInt32(127,127,127));
 	Region render_region(new_center - Vector3DInt32(32,32,32), new_center + Vector3DInt32(63,63,63));
 
 	//if we've moved we need to draw the new close chunks
 	if (force_redraw || (new_center != lastPlayerChunk)) {
+		//Region old_region(lastPlayerChunk - Vector3DInt32(64,64,64), lastPlayerChunk + Vector3DInt32(127,127,127));
 		Region old_region(lastPlayerChunk - Vector3DInt32(32,32,32), lastPlayerChunk + Vector3DInt32(63,63,63));
 
 		//hacky way to make it draw everything the first time around
@@ -322,8 +393,12 @@ Region MapManager::draw(int32_t player_x, int32_t player_y, int32_t player_z, Og
 			if (!render_region.containsPoint(chunkCache[i]) && !old_region.containsPoint(chunkCache[i])) {
 				mSceneMgr->destroyManualObject(getChunkName(chunkCache[i]));
 				cout << "Trying to destroy a scene node in the cache.\n";
-				mSceneMgr->destroySceneNode(getChunkName(chunkCache[i]));
-				cout << "Successfully destroyed said scene node.\n";
+				try {
+					mSceneMgr->destroySceneNode(getChunkName(chunkCache[i]));
+					cout << "Successfully destroyed said scene node.\n";				
+				} catch (Ogre::Exception& e) {
+					cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!\nException thrown: " << e.getDescription() << endl;
+				}				
 			} else {
 				temp_cache.push_back(chunkCache[i]);
 			}
@@ -359,12 +434,13 @@ Region MapManager::draw(int32_t player_x, int32_t player_y, int32_t player_z, Og
 						//if we're forcing a redraw, set this to true so it will redraw it
 						if (force_redraw) {
 							changed = true;
-						}
-						//check to see if it is among the changed chunks
-						for (unsigned int i = 0; i < changedChunks.size(); ++i) {
-							if ((changedChunks[i].getX() == x) && (changedChunks[i].getY() == y) && (changedChunks[i].getZ() == z)) {
-								changed = true;
-								break;
+						} else {
+							//check to see if it is among the changed chunks
+							for (unsigned int i = 0; i < changedChunks.size(); ++i) {
+								if ((changedChunks[i].getX() == x) && (changedChunks[i].getY() == y) && (changedChunks[i].getZ() == z)) {
+									changed = true;
+									break;
+								}
 							}
 						}
 						if (changed) {
@@ -454,8 +530,6 @@ Region MapManager::draw(int32_t player_x, int32_t player_y, int32_t player_z, Og
 
 	cout << "Finished drawing all map chunks\n";
 	
-	//adjust the upper corner to account for the chunk size
-	//render_region.setUpperCorner(render_region.getUpperCorner() + Vector3DInt32(32,32,32));
 	return render_region;
 }
 
@@ -484,7 +558,7 @@ double MapManager::getAveragedHeightAt(double x, double y, double z) {
 	}
 }
 
-double MapManager::getHeightAt(int32_t x, int32_t y, int32_t z, int32_t column_size) {
+double MapManager::getHeightAt(int32_t x, int32_t y, int32_t z, int32_t column_size, int sensitivity) {
 	//cout << "Checking height (" << x << ", " << y << ", " << z << ")\n";
 	Vector3DInt32 point(x, y, z);
 	if (!mapData->getEnclosingRegion().containsPoint(point)) {
@@ -499,7 +573,7 @@ double MapManager::getHeightAt(int32_t x, int32_t y, int32_t z, int32_t column_s
 				//will have to change this if we implement other non-solid voxel values (such as smoke)
 				//cout << "Checking height (" << check_x << ", " << check_y << ", " << check_z << ")\n";
 				MaterialDensityPair88 voxel_val = getVoxelAt(check_x, check_y, check_z);
-				if ((voxel_val.getMaterial() != 0) && (voxel_val.getDensity() > (255/3))) {
+				if ((voxel_val.getMaterial() != 0) && (voxel_val.getDensity() > (255/sensitivity))) {
 					//cout << "Result: " << check_y << endl;
 					return ((double)check_y - ((255 - voxel_val.getDensity())/255.0));
 				}

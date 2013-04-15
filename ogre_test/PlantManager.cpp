@@ -7,6 +7,7 @@ PlantManager::PlantManager(void) {
 	//TODO: Use an XML file or something to read in these plant values
 
 	//See the PlantManager.h for a description of each variable.
+<<<<<<< HEAD
 	PlantProfile temp_plant;
 	temp_plant.plantType = PLANT_OAK;
 	temp_plant.frequency = 100;
@@ -97,15 +98,52 @@ PlantManager::PlantManager(void) {
 	temp_plant.rangeFlatness = 0.50;
 	temp_plant.weightFlatness = 0.4;
 	plants.push_back(temp_plant);
+=======
+	PlantProfile oak;
+	oak.plantType = PLANT_OAK;
+	oak.frequency = 100;
+	oak.idealHeight = 24;
+	oak.rangeHeight = 40;
+	oak.weightHeight = 1.0;
+	oak.idealFlatness = 0.6;
+	oak.rangeFlatness = 0.4;
+	oak.weightFlatness = 0.4;
+	plants.push_back(oak);
+
+	PlantProfile pine;
+	pine.plantType = PLANT_PINE;
+	pine.frequency = 75;
+	pine.idealHeight = 50;
+	pine.rangeHeight = 40;
+	pine.weightHeight = 1.0;
+	pine.idealFlatness = 0.3;
+	pine.rangeFlatness = 0.4;
+	pine.weightFlatness = 0.6;
+	plants.push_back(pine);
+
+	PlantProfile round_shroom;
+	round_shroom.plantType = PLANT_ROUND_SHROOM;
+	round_shroom.frequency = 120;
+	round_shroom.idealHeight = 35;
+	round_shroom.rangeHeight = 75;
+	round_shroom.weightHeight = 0.1;
+	round_shroom.idealFlatness = 0.85;
+	round_shroom.rangeFlatness = 0.6;
+	round_shroom.weightFlatness = 3.0;
+	plants.push_back(round_shroom);
+>>>>>>> 8a872c1afa082e2c5060b20060ad13d3215b250a
 }
 
 PlantType PlantManager::getFlora(double height, float terrain_flatness) {
 	//An average height calculation for debugging.
-	/*static double average_height = 0;
+	/*static double average_flatness = 0;
+	static double average_height = 0;
 	static double num_evaluated = 0;
 	if (height > 0) {
+		average_flatness = ((num_evaluated * average_flatness) + terrain_flatness) / (num_evaluated + 1.0);
 		average_height = ((num_evaluated * average_height) + height) / (num_evaluated + 1.0);
 		num_evaluated++;
+		std::cout << "Average flatness: " << average_flatness << "\n";
 		std::cout << "Average height: " << average_height << "\n";
 		std::cout << "Number evaluated: " << num_evaluated << "\n";
 	}*/
@@ -115,7 +153,7 @@ PlantType PlantManager::getFlora(double height, float terrain_flatness) {
 	}*/
 
 	PlantType winner = PLANT_NONE;
-	float highest_score = 45; //increase number to decrease the chance plants will spawn / decrease the overall number of plants
+	float highest_score = 35; //increase number to decrease the chance plants will spawn / decrease the overall number of plants
 
 	for (unsigned int i = 0; i < plants.size(); ++i) {
 		//subtracts the difference between the height and the ideal height from the range, and divides it by the range.

@@ -18,7 +18,6 @@
     <!--     <ClCompile Include="..\PlantManager.cpp" /> -->
     <ClCompile Include="..\InputManager.cpp" />
     <ClCompile Include="..\PointerManager.cpp" />
-    <ClCompile Include="..\MapChunk.cpp" />
     <ClCompile Include="..\MapManager.cpp" />
     <ClCompile Include="..\PlantObject.cpp" />
     <ClCompile Include="..\PlantManager.cpp" />
@@ -32,7 +31,6 @@
     <!--     <ClInclude Include="..\PlantManager.h" /> -->
     <ClInclude Include="..\InputManager.h" />
     <ClInclude Include="..\PointerManager.h" />
-    <ClInclude Include="..\MapChunk.h" />
     <ClInclude Include="..\MapManager.h" />
     <ClInclude Include="..\PlantManager.h" />
     <ClInclude Include="..\PlantObject.h" />

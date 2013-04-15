@@ -19,3 +19,7 @@ string WorldObject::getName(void) {
 bool WorldObject::isNone(void) {
 	return (objectType == OBJECT_NONE);
 }
+
+bool WorldObject::blocksMovement(void) {
+	return doesBlockMovement;
+}
