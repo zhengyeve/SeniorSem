@@ -7,38 +7,96 @@ PlantManager::PlantManager(void) {
 	//TODO: Use an XML file or something to read in these plant values
 
 	//See the PlantManager.h for a description of each variable.
-	PlantProfile oak;
-	oak.plantType = PLANT_OAK;
-	oak.frequency = 100;
-	oak.idealHeight = 30;
-	oak.rangeHeight = 50;
-	oak.weightHeight = 1.0;
-	oak.idealFlatness = 0.85;
-	oak.rangeFlatness = 0.50;
-	oak.weightFlatness = 0.4;
-	plants.push_back(oak);
+	PlantProfile temp_plant;
+	temp_plant.plantType = PLANT_OAK;
+	temp_plant.frequency = 100;
+	temp_plant.idealHeight = 30;
+	temp_plant.rangeHeight = 50;
+	temp_plant.weightHeight = 1.0;
+	temp_plant.idealFlatness = 0.85;
+	temp_plant.rangeFlatness = 0.50;
+	temp_plant.weightFlatness = 0.4;
+	plants.push_back(temp_plant);
 
-	PlantProfile pine;
-	pine.plantType = PLANT_PINE;
-	pine.frequency = 75;
-	pine.idealHeight = 55;
-	pine.rangeHeight = 50;
-	pine.weightHeight = 1.0;
-	pine.idealFlatness = 0.70;
-	pine.rangeFlatness = 0.35;
-	pine.weightFlatness = 0.6;
-	plants.push_back(pine);
+	temp_plant.plantType = PLANT_PINE;
+	temp_plant.frequency = 75;
+	temp_plant.idealHeight = 55;
+	temp_plant.rangeHeight = 50;
+	temp_plant.weightHeight = 1.0;
+	temp_plant.idealFlatness = 0.70;
+	temp_plant.rangeFlatness = 0.35;
+	temp_plant.weightFlatness = 0.6;
+	plants.push_back(temp_plant);
 
-	PlantProfile round_shroom;
-	round_shroom.plantType = PLANT_ROUND_SHROOM;
-	round_shroom.frequency = 120;
-	round_shroom.idealHeight = 35;
-	round_shroom.rangeHeight = 75;
-	round_shroom.weightHeight = 0.1;
-	round_shroom.idealFlatness = 0.95;
-	round_shroom.rangeFlatness = 0.20;
-	round_shroom.weightFlatness = 3.0;
-	plants.push_back(round_shroom);
+	temp_plant.plantType = PLANT_ROUND_SHROOM;
+	temp_plant.frequency = 120;
+	temp_plant.idealHeight = 35;
+	temp_plant.rangeHeight = 75;
+	temp_plant.weightHeight = 0.1;
+	temp_plant.idealFlatness = 0.95;
+	temp_plant.rangeFlatness = 0.20;
+	temp_plant.weightFlatness = 3.0;
+	plants.push_back(temp_plant);
+
+	temp_plant.plantType = PLANT_BLUE_DICK;
+	temp_plant.frequency = 100;
+	temp_plant.idealHeight = 30;
+	temp_plant.rangeHeight = 50;
+	temp_plant.weightHeight = 1.0;
+	temp_plant.idealFlatness = 0.85;
+	temp_plant.rangeFlatness = 0.50;
+	temp_plant.weightFlatness = 0.4;
+	plants.push_back(temp_plant);
+
+	temp_plant.plantType = PLANT_BALSAM_ROOT;
+	temp_plant.frequency = 100;
+	temp_plant.idealHeight = 30;
+	temp_plant.rangeHeight = 50;
+	temp_plant.weightHeight = 1.0;
+	temp_plant.idealFlatness = 0.85;
+	temp_plant.rangeFlatness = 0.50;
+	temp_plant.weightFlatness = 0.4;
+	plants.push_back(temp_plant);
+
+	temp_plant.plantType = PLANT_CANARY_GRASS;
+	temp_plant.frequency = 100;
+	temp_plant.idealHeight = 30;
+	temp_plant.rangeHeight = 50;
+	temp_plant.weightHeight = 1.0;
+	temp_plant.idealFlatness = 0.85;
+	temp_plant.rangeFlatness = 0.50;
+	temp_plant.weightFlatness = 0.4;
+	plants.push_back(temp_plant);
+
+	temp_plant.plantType = PLANT_MULE_EARS;
+	temp_plant.frequency = 100;
+	temp_plant.idealHeight = 30;
+	temp_plant.rangeHeight = 50;
+	temp_plant.weightHeight = 1.0;
+	temp_plant.idealFlatness = 0.85;
+	temp_plant.rangeFlatness = 0.50;
+	temp_plant.weightFlatness = 0.4;
+	plants.push_back(temp_plant);
+
+	temp_plant.plantType = PLANT_FIREWEED;
+	temp_plant.frequency = 100;
+	temp_plant.idealHeight = 30;
+	temp_plant.rangeHeight = 50;
+	temp_plant.weightHeight = 1.0;
+	temp_plant.idealFlatness = 0.85;
+	temp_plant.rangeFlatness = 0.50;
+	temp_plant.weightFlatness = 0.4;
+	plants.push_back(temp_plant);
+
+	temp_plant.plantType = PLANT_WINECUP;
+	temp_plant.frequency = 100;
+	temp_plant.idealHeight = 30;
+	temp_plant.rangeHeight = 50;
+	temp_plant.weightHeight = 1.0;
+	temp_plant.idealFlatness = 0.85;
+	temp_plant.rangeFlatness = 0.50;
+	temp_plant.weightFlatness = 0.4;
+	plants.push_back(temp_plant);
 }
 
 PlantType PlantManager::getFlora(double height, float terrain_flatness) {
